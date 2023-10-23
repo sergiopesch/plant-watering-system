@@ -1,0 +1,61 @@
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f2f2f2;
+  font-family: 'Arial', sans-serif;
+}
+
+.logo {
+  width: 180px;  /* Made the logo a bit bigger */
+  margin-bottom: 5px;
+}
+
+.sign-up-text {
+  font-size: 14px;  /* Made the sign-up prompt bigger */
+  color: #4e4d4d;     /* Darker color for better readability */
+  margin-bottom: 16px;
+  margin-top: 0; 
+  text-align: center;  /* Added some bottom margin */
+}
+
+.sign-in-prompt{
+  font-size: 14px;  /* Tuned the font sizes */
+  color: #666;
+  text-align: center;
+  margin-bottom: 50px;
+}
+.terms-notice {
+  font-size: 10px;  /* Tuned the font sizes */
+  color: #666;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.sign-in-text,
+.link-text {
+  color: #3d9f4b;
+  cursor: pointer;
+}
+
+.icon-container {
+  display: flex;
+  justify-content: center;  /* Center aligned icons */
+  gap: 20px;  /* Added gap between icons */
+}
+
+.social-icon {
+  font-size: 30px !important;
+  color: #666;  /* Neutral color */
+  cursor: pointer;
+  transition: color 0.3s ease;  /* Added transition */
+  margin-bottom: 15px;
+}
+
+.social-icon:hover {
+  color: #3d9f4b;  /* Added hover color */
+}
+
+/* Removed .social-buttons and .social-btn classes as they are no longer used */

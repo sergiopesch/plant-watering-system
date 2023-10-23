@@ -1,0 +1,54 @@
+/* Global Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Add a base font-size to the root element */
+:root {
+  font-size: 16px;
+}
+
+/* Homepage Styles */
+.homepage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    font-family: 'Arial', sans-serif;
+    background: #f9f9f9; /* Light grey background for a cleaner look */
+    min-height: 100vh; /* Full viewport height */
+}
+
+.welcome-text {
+    text-align: center;
+    white-space: pre-wrap;
+    font-size: 1.5rem; /* Slightly larger font size for readability */
+    line-height: 1.6; /* Improved line spacing */
+    color: #333; /* Dark grey for better contrast */
+    max-width: 800px; /* Maximum width */
+    margin-bottom: 20px; /* Bottom margin for spacing */
+}
+
+.typing-caret {
+    animation: typing 0.5s steps(1) infinite;
+    font-weight: bold; /* Bold for visibility */
+}
+
+@media only screen and (max-width: 768px) {
+    /* Responsive adjustments */
+    .homepage {
+      padding: 20px;
+    }
+    .welcome-text {
+      font-size: 1.2rem;
+    }
+}
+
+/* Keyframes for typing animation */
+@keyframes typing {
+    0%, 100% { visibility: visible; }
+    50% { visibility: hidden; }
+}

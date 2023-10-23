@@ -1,0 +1,31 @@
+
+/* UserProfile.css */
+
+.user-profile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    padding-top: 10rem;
+    background-color: #f9f9f9;
+  }
+  
+  .user-profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .user-profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+  }
+  
+  .user-profile-details {
+    text-align: center;
+  }
+  
