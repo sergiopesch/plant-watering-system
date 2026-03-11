@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import 'font-awesome/css/font-awesome.min.css';
 import './styles/Home.css';
 import { useGlobalContext } from '../GlobalContext';
-import NavBar from './NavBar';
-import HomePage from './HomePage';
-import Header from './Header';
+import NavBar from './NavBar.jsx';
+import HomePage from './HomePage.jsx';
+import Header from './Header.jsx';
 import './styles/Shared.css';
 
 const Home = ({ user }) => {

@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import './styles/HomePage.css';
 import './styles/Shared.css';
 import { getAuth, signOut } from 'firebase/auth';
-import { Outlet } from 'react-router-dom';
-import Header from './Header';
-import NavBar from './NavBar';
-
+import Header from './Header.jsx';
+import NavBar from './NavBar.jsx';
 
 const HomePage = () => {
 
@@ -26,8 +24,6 @@ const HomePage = () => {
       <Header />
 
       <div className="page-content">
-        // Main app content 
-
         <button onClick={handleSignOut}>Sign Out</button>
       </div>
 

@@ -1,19 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import Auth from './components/Auth';
-import Home from './components/Home';
-import PlantProfile from './components/PlantProfile';
-import PlantList from './components/PlantList';
-import PlantProfileList from './components/PlantProfileList';
-import NavBar from './components/NavBar';
-import Header from './components/Header';
-import UserProfile from './components/UserProfile';
-import { GlobalProvider } from './GlobalContext';
+import Auth from './components/Auth.jsx';
+import Home from './components/Home.jsx';
+import PlantProfile from './components/PlantProfile.jsx';
+import PlantList from './components/PlantList.jsx';
+import PlantProfileList from './components/PlantProfileList.jsx';
+import NavBar from './components/NavBar.jsx';
+import Header from './components/Header.jsx';
+import UserProfile from './components/UserProfile.jsx';
+import { GlobalProvider } from './GlobalContext.jsx';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-import PlantGraphs from './components/PlantGraphs';
+import PlantGraphs from './components/PlantGraphs.jsx';
 import { getDatabase, ref, get } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import HomePage from './components/HomePage';
+import HomePage from './components/HomePage.jsx';
 
 const Content = ({ user }) => {
   const location = useLocation();
@@ -55,7 +55,11 @@ function App() {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   return (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './styles/Header.css';
-
+import logo from '../logo.png';
 
 const Header = () => {
   return (
@@ -9,7 +9,7 @@ const Header = () => {
       <div className="header-logo-container">
         <Link to="/home">
             <i className="fa fa-shared fa-2x"></i>
-          <img src="../logo.png" alt="App Logo" className="header-app-logo" />
+          <img src={logo} alt="App Logo" className="header-app-logo" />
         </Link>
       </div>
       <div className="header-items-container">
@@ -25,7 +25,7 @@ const Header = () => {
           </Link>
         </div>
         <div className="header-item">
-          <Link to="/notifications">
+          <Link to="/plant-graphs">
             <i className="fa fa-bell fa-2x"></i>
           </Link>
         </div>

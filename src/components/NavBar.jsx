@@ -19,7 +19,7 @@ const NavBar = () => {
         </Link>
       </div>
       <div className="nav-item">
-        <Link to="/settings">
+        <Link to="/user-profile">
           <i className="fa fa-cog fa-2x"></i>
         </Link>
       </div>

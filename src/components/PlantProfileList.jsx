@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles/PlantProfileList.css';
 import './styles/Shared.css';
-import PlantList from './PlantList';
+import PlantList from './PlantList.jsx';
 
 const MAX_PLANT_PROFILES = 3;
 const CAMERA_DIMENSIONS = 300;

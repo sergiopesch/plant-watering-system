@@ -1,7 +1,6 @@
 
-// Assuming you have a firebase.js file with the necessary Firebase initialization
-import firebase from '../firebase';
 import React from 'react';
+import app from '../firebase';
 import { getAuth, GoogleAuthProvider, TwitterAuthProvider, signInWithPopup } from "firebase/auth";
 import { getDatabase, ref, get, set } from "firebase/database";
 import '../styles/Auth.css';
@@ -9,7 +8,7 @@ import 'font-awesome/css/font-awesome.min.css';
 import logo from '../logo.png';
 
 const Auth = () => {
-  const auth = getAuth();
+  const auth = getAuth(app);
 
   const handleGoogleSignIn = () => {
     const provider = new GoogleAuthProvider();
