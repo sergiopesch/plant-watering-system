@@ -29,5 +29,9 @@
     "jsdom": "^26.0.0",
     "vite": "^6.2.2",
     "vitest": "^3.0.8"
+  },
+  "overrides": {
+    "picomatch": "4.0.4",
+    "yaml": "2.8.3"
   }
 }
