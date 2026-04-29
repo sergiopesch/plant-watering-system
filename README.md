@@ -94,7 +94,7 @@ npm run build
 Production dependency audit:
 
 ```bash
-npm audit --omit=dev
+npm run security:audit
 ```
 
 `verify:ui` starts a local Vite server, opens Chromium with Playwright, and checks desktop/mobile layouts for clipped sections, text overflow, missing CTA, incorrect favicon/title, and blank Three.js scenes. If your system does not expose Chromium at `/snap/bin/chromium`, install Playwright browsers or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
