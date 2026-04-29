@@ -379,61 +379,74 @@
   z-index: 1;
 }
 
-.growth-field {
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  position: absolute;
-  z-index: 2;
-}
-
-.growth-field::before {
-  background:
-    linear-gradient(90deg, rgba(17, 29, 22, 0.12), rgba(17, 29, 22, 0)),
-    url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1800&q=90");
-  background-position: 62% 74%;
-  background-size: 142%;
-  bottom: -2%;
-  clip-path: inset(78% 4% 0 42% round 42% 42% 0 0);
-  content: "";
-  filter: saturate(1.16) contrast(1.02);
-  height: 112%;
-  left: 0;
-  mask-image: linear-gradient(90deg, transparent 42%, #000 52%, #000 92%, transparent 100%);
-  opacity: 0;
-  position: absolute;
-  transform: translate3d(7%, 16%, 0) scale(0.72);
-  transform-origin: 62% 100%;
-  width: 100%;
-}
-
-.growth-field::after {
-  background:
-    radial-gradient(ellipse at 70% 100%, rgba(198, 228, 165, 0.34), transparent 30%),
-    linear-gradient(90deg, transparent 0 58%, rgba(198, 228, 165, 0.28) 59% 60%, transparent 61%),
-    radial-gradient(ellipse at 66% 42%, rgba(198, 228, 165, 0.18), transparent 10%),
-    radial-gradient(ellipse at 77% 34%, rgba(106, 199, 223, 0.16), transparent 12%);
-  bottom: -18%;
-  content: "";
-  height: 76%;
-  left: 0;
-  opacity: 0;
-  position: absolute;
-  width: 100%;
-}
-
-.cta-page.is-growing .growth-field::before {
-  animation: footer-photo-grow 17s cubic-bezier(0.18, 0.8, 0.2, 1) both;
-}
-
-.cta-page.is-growing .growth-field::after {
-  animation: growth-light-rise 17s cubic-bezier(0.18, 0.8, 0.2, 1) both, root-glow 7s ease-in-out 8s infinite alternate;
-}
-
 .cta-panel {
   max-width: 850px;
   position: relative;
   z-index: 3;
+}
+
+.footer-plant {
+  bottom: 0;
+  height: min(82vh, 760px);
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: clamp(-80px, 2vw, 44px);
+  width: clamp(280px, 37vw, 560px);
+  z-index: 2;
+}
+
+.footer-plant::before {
+  animation: root-glow 8s ease-in-out infinite alternate;
+  background: radial-gradient(ellipse at 58% 100%, rgba(198, 228, 165, 0.34), transparent 42%);
+  bottom: 0;
+  content: "";
+  height: 42%;
+  left: -18%;
+  opacity: 0.62;
+  position: absolute;
+  width: 134%;
+}
+
+.footer-plant-frame {
+  bottom: 0;
+  clip-path: inset(72% 0 0);
+  height: 100%;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  transform: translate3d(0, 18%, 0) scale(0.82);
+  transform-origin: 50% 100%;
+  width: 100%;
+}
+
+.footer-plant-frame::after {
+  background:
+    linear-gradient(90deg, rgba(17, 29, 22, 0.78), transparent 24%, transparent 78%, rgba(17, 29, 22, 0.24)),
+    linear-gradient(180deg, transparent 58%, rgba(17, 29, 22, 0.46));
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.footer-plant img {
+  display: block;
+  filter: saturate(1.08) contrast(1.02);
+  height: 100%;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 90%, transparent 100%);
+  object-fit: cover;
+  object-position: 54% 58%;
+  transform: scale(1.1);
+  width: 100%;
+}
+
+.cta-page.is-growing .footer-plant-frame {
+  animation: footer-plant-grow 13s cubic-bezier(0.16, 0.82, 0.18, 1) both;
+}
+
+.cta-page.is-growing .footer-plant img {
+  animation: footer-plant-settle 13s cubic-bezier(0.16, 0.82, 0.18, 1) both;
 }
 
 .cta-panel h2 {
@@ -522,42 +535,35 @@
   }
 }
 
-@keyframes footer-photo-grow {
+@keyframes footer-plant-grow {
   0% {
-    background-position: 62% 82%;
-    background-size: 128%;
-    clip-path: inset(82% 4% 0 42% round 44% 44% 0 0);
+    clip-path: inset(76% 0 0);
     opacity: 0;
-    transform: translate3d(7%, 18%, 0) scale(0.68);
+    transform: translate3d(0, 18%, 0) scale(0.82);
   }
   18% {
-    opacity: 0.36;
+    opacity: 0.42;
   }
-  66% {
-    clip-path: inset(18% 4% 0 42% round 42% 42% 0 0);
-    opacity: 0.82;
-    transform: translate3d(4%, 2%, 0) scale(0.98);
+  68% {
+    clip-path: inset(8% 0 0);
+    opacity: 0.9;
+    transform: translate3d(0, 0, 0) scale(1);
   }
   100% {
-    background-position: 62% 58%;
-    background-size: 144%;
-    clip-path: inset(0 4% 0 42% round 40% 40% 0 0);
-    opacity: 0.72;
-    transform: translate3d(2%, -2%, 0) scale(1.04);
+    clip-path: inset(0 0 0);
+    opacity: 0.84;
+    transform: translate3d(0, -2%, 0) scale(1.03);
   }
 }
 
-@keyframes growth-light-rise {
+@keyframes footer-plant-settle {
   0% {
-    opacity: 0;
-    transform: translate3d(0, 16%, 0) scaleY(0.52);
-  }
-  72% {
-    opacity: 0.86;
+    object-position: 54% 68%;
+    transform: scale(1.18);
   }
   100% {
-    opacity: 0.64;
-    transform: translate3d(0, 0, 0) scaleY(1);
+    object-position: 54% 52%;
+    transform: scale(1.04);
   }
 }
 
@@ -607,21 +613,15 @@
   .circuit-board::before,
   .cta-page::before,
   .cta-page::after,
-  .growth-field::before,
-  .growth-field::after {
+  .footer-plant::before,
+  .footer-plant-frame,
+  .footer-plant img {
     animation: none;
   }
 
-  .growth-field::before {
-    background-position: 62% 58%;
-    background-size: 144%;
-    clip-path: inset(0 4% 0 42% round 40% 40% 0 0);
-    opacity: 0.72;
-    transform: translate3d(2%, -2%, 0) scale(1.04);
-  }
-
-  .growth-field::after {
-    opacity: 0.64;
+  .footer-plant-frame {
+    clip-path: inset(0);
+    opacity: 0.84;
     transform: none;
   }
 }
@@ -635,6 +635,13 @@
 
   .circuit-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer-plant {
+    height: min(62vh, 560px);
+    opacity: 0.66;
+    right: -22vw;
+    width: min(76vw, 460px);
   }
 }
 
@@ -673,5 +680,12 @@
 
   .cta-panel h2 {
     font-size: 2.35rem;
+  }
+
+  .footer-plant {
+    height: 52vh;
+    opacity: 0.5;
+    right: -42vw;
+    width: 96vw;
   }
 }

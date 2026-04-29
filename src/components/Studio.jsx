@@ -510,7 +510,14 @@ const Studio = () => {
         className={`studio-page cta-page${ctaIsGrowing ? ' is-growing' : ''}`}
         aria-labelledby="cta-title"
       >
-        <div className="growth-field" aria-hidden="true" />
+        <div className="footer-plant" aria-hidden="true">
+          <div className="footer-plant-frame">
+            <img
+              src="https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=90"
+              alt=""
+            />
+          </div>
+        </div>
         <div className="cta-panel">
           <p className="studio-kicker">Build the first living prototype</p>
           <h2 id="cta-title">Start with a printable pot, then teach it to care for itself.</h2>
