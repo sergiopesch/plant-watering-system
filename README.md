@@ -1,5 +1,7 @@
 # Virdis Foundry
 
+![Virdis Foundry product screenshot](docs/assets/virdis-foundry-banner.jpg)
+
 Virdis Foundry is a public, immersive digital product studio for self-contained, autonomous plant pots.
 
 The intended workflow is:
@@ -25,6 +27,18 @@ It includes:
 - first-pass autonomy, soil volume, water demand, dose, and print-time estimates
 
 This is not yet a real CAD kernel or physics engine. It is the foundation for those layers.
+
+## Product Surface
+
+The current public experience is structured as five immersive pages:
+
+1. **Design system v0.1**: living pointer-responsive hero and product positioning.
+2. **CAD 3D**: interactive geometry controls with a Three.js pot concept.
+3. **Electronics**: modular controller, sensor, pump, and material selection model.
+4. **Simulated world**: environmental controls for temperature, humidity, light, water use, and autonomy.
+5. **Start building**: final call to action for moving from concept into a first printable prototype.
+
+The banner image above is a real screenshot of the current local product UI, captured from the live Vite app.
 
 ## Product Architecture
 
@@ -83,6 +97,19 @@ Run browser UI verification:
 
 ```bash
 npm run verify:ui
+```
+
+Refresh the README banner screenshot after major visual changes:
+
+```bash
+mkdir -p docs/assets
+npm run docs:banner
+```
+
+If your dev server is on a different port, pass it explicitly:
+
+```bash
+BANNER_URL=http://localhost:3003/ npm run docs:banner
 ```
 
 Build for production:

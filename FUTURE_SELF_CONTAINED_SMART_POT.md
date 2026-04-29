@@ -1,5 +1,7 @@
 # Virdis Foundry: Self-Contained Smart Plant Pot
 
+![Virdis Foundry product screenshot](docs/assets/virdis-foundry-banner.jpg)
+
 This document captures the product and engineering direction for evolving `plant-watering-system` from a simple watering project into **Virdis Foundry**, a design-to-prototype studio for self-contained, agent-connected smart planters.
 
 ## Vision
@@ -16,6 +18,8 @@ Build a **self-contained plant pot platform** with:
 The goal is not just "automatic watering". The more interesting product is a **plant life-support node** that can be designed digitally, tested virtually, manufactured locally, and monitored through intelligent software.
 
 The current first increment is a public studio at `/`. It establishes the brand, metadata, favicon, a pointer-responsive living hero, configurable pot geometry, first-pass environmental estimates, CAD/electronics/simulation pages, a final build CTA, and the system module map. It intentionally stops short of pretending to be a finished CAD or physics environment.
+
+The screenshot above is captured from the current running product and should be refreshed when the first viewport changes materially.
 
 ---
 
