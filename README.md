@@ -1,70 +1,109 @@
-# Getting Started with Create React App
+# Virdis Foundry
 
-This project runs on [Vite](https://vitejs.dev/) with React.
+Virdis Foundry is a public, immersive digital product studio for self-contained, autonomous plant pots.
 
-## Available Scripts
+The intended workflow is:
 
-In the project directory, you can run:
+1. Design a printable pot system with configurable geometry, reservoir layout, electronics bay, sensor channels, and fluid routing.
+2. Simulate the design against plant profile, reservoir capacity, ambient temperature, humidity, light, pump dosing, and sensor confidence.
+3. Generate production artifacts: CAD/STL parts, bill of materials, firmware configuration, wiring notes, and validation plans.
+4. Bring the design into the physical world through 3D printing, electronics assembly, firmware flashing, and hardware-in-the-loop testing.
 
-### `npm start`
+## Current App
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The studio is available at `/` during local development.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+It includes:
 
-### `npm test`
+- Virdis Foundry branding and product direction
+- Virdis metadata, manifest branding, and SVG favicon
+- living pointer-responsive leaves in the opening scene
+- a one-page-at-a-time immersive flow
+- parametric pot geometry controls
+- material and plant profile choices
+- Three.js CAD and simulation scenes
+- first-pass autonomy, soil volume, water demand, dose, and print-time estimates
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This is not yet a real CAD kernel or physics engine. It is the foundation for those layers.
 
-### `npm run build`
+## Product Architecture
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The long-term system has six layers:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- CAD design: parametric pot, reservoir, dry electronics bay, sensor spine, tubing channels, service covers, printable split lines
+- Simulation: water balance, evaporation, reservoir mass, soil moisture trend, sensor noise, pump flow, failure conditions
+- Materials: PETG or ASA for early printed prototypes, optional ceramic or sleeve materials later
+- Electronics: ESP32-S3 class controller, capacitive soil moisture sensor, reservoir level sensor, environment sensor, light sensor, pump driver
+- Firmware: autonomous dosing loop with soak/observe/fault-detect behavior
+- Studio handoff: STL export, BOM, firmware settings, assembly checklist, and test report
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Research Anchors
 
-### `npm run eject`
+The first architecture pass is based on these practical constraints:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- Self-watering containers need a reservoir plus overflow/aeration strategy, not just a closed wet chamber. University extension guidance treats the reservoir and overflow path as core design elements.
+- Container plants are sensitive to both under-watering and poor drainage. Drainage and air access are part of the watering design, not separate details.
+- Capacitive moisture sensing is preferred over cheap resistive probes for longer-lived soil use because resistive probes corrode and drift.
+- ESP32-S3 is a strong controller target because it provides Wi-Fi, Bluetooth LE, low-power modes, and an established ESP-IDF workflow.
+- JSCAD is a viable browser/CLI path for JavaScript parametric CAD and printable STL workflows.
+- Three.js can render STL and WebGL scenes in-browser.
+- Rapier provides a modern WebAssembly/JavaScript physics engine for later rigid-body and collision simulation.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Primary references:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- University of Maryland Extension, self-watering containers: https://extension.umd.edu/resource/self-watering-containers
+- University of Illinois Extension, container watering and drainage: https://extension.illinois.edu/blogs/flowers-fruits-and-frass/2020-06-22-6-tips-watering-container-gardens
+- ESP32-S3 product and ESP-IDF documentation: https://www.espressif.com/en/products/socs/esp32-s3 and https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/about.html
+- Bosch BME280 environmental sensor: https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/
+- JSCAD documentation: https://openjscad.xyz/docs/
+- Three.js STL tooling: https://threejs.org/docs/pages/STLLoader.html
+- Rapier physics engine: https://rapier.rs/
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Development
 
-## Learn More
+Install dependencies:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+npm install
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Run the local app:
 
-### Code Splitting
+```bash
+npm run dev
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Run tests:
 
-### Analyzing the Bundle Size
+```bash
+npm test
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Run browser UI verification:
 
-### Making a Progressive Web App
+```bash
+npm run verify:ui
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Build for production:
 
-### Advanced Configuration
+```bash
+npm run build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Production dependency audit:
 
-### Deployment
+```bash
+npm audit --omit=dev
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+`verify:ui` starts a local Vite server, opens Chromium with Playwright, and checks desktop/mobile layouts for clipped sections, text overflow, missing CTA, incorrect favicon/title, and blank Three.js scenes. If your system does not expose Chromium at `/snap/bin/chromium`, install Playwright browsers or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
 
-### `npm run build` fails to minify
+## Next Increments
 
-
+1. Extract the studio configuration into a typed domain model.
+2. Add a real parametric geometry generator and STL export path.
+3. Add a simulation model with explicit water balance, pump dosing, sensor uncertainty, and failure states.
+4. Define the ESP32 firmware command/telemetry schema.
+5. Add prototype BOM, wiring, assembly, and calibration docs.
+6. Validate one printable v1 pot before broadening into multi-pot orchestration.

@@ -1,0 +1,437 @@
+.studio-shell {
+  --pointer-x: 0;
+  --pointer-y: 0;
+  background: #f4f6ef;
+  color: #17241c;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  scroll-snap-type: y proximity;
+  scroll-behavior: smooth;
+  text-align: left;
+}
+
+.studio-page {
+  align-content: center;
+  display: grid;
+  min-height: 100vh;
+  overflow: visible;
+  padding: clamp(28px, 4vw, 48px) clamp(14px, 4vw, 64px);
+  position: relative;
+  scroll-snap-align: start;
+}
+
+.hero-page {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(16, 25, 19, 0.76), rgba(16, 25, 19, 0.35)),
+    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=1800&q=85");
+  background-position: center;
+  background-size: cover;
+  color: #ffffff;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.leaf-field {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+.living-leaf {
+  animation: leaf-breathe 5.8s ease-in-out infinite;
+  animation-delay: var(--leaf-delay);
+  background:
+    radial-gradient(circle at 36% 34%, rgba(255, 255, 255, 0.42), transparent 18%),
+    linear-gradient(135deg, #d5f0a7, #5d9d5c 54%, #23472f);
+  border-radius: 100% 0 100% 0;
+  box-shadow: 0 16px 42px rgba(3, 18, 9, 0.28);
+  height: calc(42px * var(--leaf-scale));
+  left: var(--leaf-x);
+  opacity: 0.82;
+  position: absolute;
+  top: var(--leaf-y);
+  transform:
+    translate3d(calc(var(--pointer-x) * (18px + var(--leaf-index) * 1px)), calc(var(--pointer-y) * (20px + var(--leaf-index) * 0.7px)), 0)
+    rotate(calc(-28deg + var(--pointer-x) * 34deg + var(--leaf-index) * 7deg))
+    scale(var(--leaf-scale));
+  transform-origin: 20% 80%;
+  transition: transform 120ms linear;
+  width: calc(24px * var(--leaf-scale));
+}
+
+.living-leaf::after {
+  background: rgba(255, 255, 255, 0.44);
+  content: "";
+  height: 84%;
+  left: 49%;
+  position: absolute;
+  top: 8%;
+  transform: rotate(12deg);
+  width: 1px;
+}
+
+.hero-content {
+  max-width: min(880px, 72vw);
+  position: relative;
+  z-index: 2;
+}
+
+.studio-kicker {
+  color: #c6e4a5;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.hero-content h1,
+.section-copy h2 {
+  letter-spacing: 0;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.hero-content h1 {
+  font-size: clamp(3rem, 5.8vw, 6.1rem);
+  max-width: 960px;
+}
+
+.hero-content p,
+.section-copy p {
+  font-size: 1.05rem;
+  line-height: 1.58;
+  margin: 22px 0 0;
+  max-width: 660px;
+}
+
+.control-surface,
+.circuit-board article,
+.module-note {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(24, 34, 28, 0.12);
+  border-radius: 8px;
+  color: #1d2a22;
+}
+
+.metric-grid span,
+.module-note span {
+  color: #667063;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cad-page {
+  background:
+    radial-gradient(circle at 76% 20%, rgba(112, 156, 105, 0.22), transparent 26%),
+    linear-gradient(180deg, #f4f6ef, #e7ece1);
+}
+
+.electronics-page {
+  background:
+    linear-gradient(90deg, rgba(28, 43, 36, 0.92), rgba(43, 63, 51, 0.78)),
+    #1f3027;
+  color: #ffffff;
+}
+
+.simulation-page {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(103, 183, 196, 0.22), transparent 27%),
+    linear-gradient(180deg, #eaf2ee, #dce7dc);
+}
+
+.section-copy {
+  margin: 0 auto 24px;
+  max-width: 1180px;
+  width: 100%;
+}
+
+.section-copy h2 {
+  font-size: clamp(2.2rem, 4.2vw, 4.6rem);
+  max-width: 900px;
+}
+
+.electronics-page .section-copy p {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.immersive-grid,
+.electronics-layout {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  margin: 0 auto;
+  max-width: 1180px;
+  width: 100%;
+}
+
+.three-stage {
+  background:
+    linear-gradient(90deg, rgba(39, 54, 46, 0.07) 1px, transparent 1px),
+    linear-gradient(rgba(39, 54, 46, 0.07) 1px, transparent 1px),
+    rgba(255, 255, 255, 0.68);
+  background-size: 30px 30px;
+  border: 1px solid rgba(24, 34, 28, 0.12);
+  border-radius: 8px;
+  min-height: clamp(360px, 48vh, 560px);
+  overflow: hidden;
+}
+
+.simulation-grid .three-stage {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
+    #dbe8de;
+}
+
+.three-stage canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.control-surface {
+  align-content: start;
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.control-surface label {
+  color: #35423a;
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.control-surface input {
+  accent-color: #4f745d;
+  width: 100%;
+}
+
+.control-surface label span {
+  color: #667063;
+  font-size: 0.84rem;
+}
+
+.metric-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric-grid article {
+  background: #f7f8f2;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.metric-grid strong {
+  color: #1e3027;
+  display: block;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  margin-top: 5px;
+}
+
+.electronics-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+}
+
+.circuit-board {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  position: relative;
+}
+
+.circuit-board::before {
+  background:
+    linear-gradient(90deg, rgba(198, 228, 165, 0.2) 1px, transparent 1px),
+    linear-gradient(rgba(198, 228, 165, 0.2) 1px, transparent 1px);
+  background-size: 42px 42px;
+  content: "";
+  inset: 0;
+  opacity: 0.5;
+  position: absolute;
+}
+
+.circuit-board article {
+  backdrop-filter: blur(16px);
+  display: grid;
+  min-height: clamp(150px, 20vh, 190px);
+  padding: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.circuit-board article span {
+  color: #88b676;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.circuit-board article strong {
+  align-self: end;
+  color: #17241c;
+  font-size: 1.2rem;
+}
+
+.circuit-board article p,
+.module-note p {
+  color: #5c685f;
+  line-height: 1.45;
+  margin: 8px 0 0;
+}
+
+.electronics-controls {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.segmented-options {
+  background: #eef3e8;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 1fr;
+  padding: 4px;
+}
+
+.material-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.segmented-options button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #415045;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 900;
+  min-height: 42px;
+  padding: 8px;
+}
+
+.segmented-options button.is-active {
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(48, 61, 49, 0.12);
+  color: #18221c;
+}
+
+.module-note {
+  padding: 16px;
+}
+
+.cta-page {
+  background:
+    linear-gradient(90deg, rgba(16, 25, 19, 0.82), rgba(16, 25, 19, 0.42)),
+    url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1800&q=85");
+  background-position: center;
+  background-size: cover;
+  color: #ffffff;
+}
+
+.cta-panel {
+  max-width: 850px;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-panel h2 {
+  font-size: clamp(2.5rem, 5.2vw, 5.8rem);
+  letter-spacing: 0;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.cta-panel p {
+  font-size: 1.08rem;
+  line-height: 1.58;
+  margin: 22px 0 0;
+  max-width: 640px;
+}
+
+.cta-button {
+  align-items: center;
+  background: #c6e4a5;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  color: #17241c;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 900;
+  justify-content: center;
+  margin-top: 32px;
+  min-height: 52px;
+  padding: 0 22px;
+  text-decoration: none;
+}
+
+.cta-button:hover {
+  background: #ffffff;
+}
+
+@keyframes leaf-breathe {
+  0%,
+  100% {
+    margin-top: 0;
+  }
+  50% {
+    margin-top: -18px;
+  }
+}
+
+@media (max-width: 940px) {
+  .hero-page,
+  .immersive-grid,
+  .electronics-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .circuit-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .studio-page {
+    min-height: auto;
+    padding: 54px 12px;
+  }
+
+  .hero-page,
+  .cta-page {
+    min-height: 100svh;
+  }
+
+  .hero-content h1 {
+    font-size: 2.45rem;
+  }
+
+  .hero-content {
+    max-width: 100%;
+  }
+
+  .section-copy h2 {
+    font-size: 2.05rem;
+  }
+
+  .three-stage {
+    min-height: 320px;
+  }
+
+  .metric-grid,
+  .circuit-board,
+  .material-options {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-panel h2 {
+    font-size: 2.35rem;
+  }
+}

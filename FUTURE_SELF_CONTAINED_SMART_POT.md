@@ -1,10 +1,10 @@
-# Future Phase: Self-Contained Smart Plant Pot
+# Virdis Foundry: Self-Contained Smart Plant Pot
 
-This document captures a future-direction brainstorm for evolving `plant-watering-system` from a simple watering project into a self-contained, agent-connected smart planter.
+This document captures the product and engineering direction for evolving `plant-watering-system` from a simple watering project into **Virdis Foundry**, a design-to-prototype studio for self-contained, agent-connected smart planters.
 
 ## Vision
 
-Build a **self-contained plant pot** with:
+Build a **self-contained plant pot platform** with:
 - integrated water reservoir
 - pump / motor system
 - sensing for moisture, reservoir level, and environment
@@ -13,7 +13,9 @@ Build a **self-contained plant pot** with:
 - agent integration with Claw
 - 3D-printable modular housing
 
-The goal is not just "automatic watering". The more interesting product is a **plant life-support node** that can be monitored, explained, and controlled through Claw.
+The goal is not just "automatic watering". The more interesting product is a **plant life-support node** that can be designed digitally, tested virtually, manufactured locally, and monitored through intelligent software.
+
+The current first increment is a public studio at `/`. It establishes the brand, metadata, favicon, a pointer-responsive living hero, configurable pot geometry, first-pass environmental estimates, CAD/electronics/simulation pages, a final build CTA, and the system module map. It intentionally stops short of pretending to be a finished CAD or physics environment.
 
 ---
 
@@ -242,6 +244,26 @@ This is where the project becomes more than IoT telemetry.
 
 ## Software architecture options
 
+### Studio stack direction
+
+Recommended browser-first stack:
+- React / Vite for the product studio
+- JSCAD for JavaScript parametric CAD generation and future STL export
+- Three.js for 3D scene rendering and STL preview
+- Rapier for later rigid-body / assembly / collision simulation
+- a deterministic plant-water model before attempting high-fidelity fluid simulation
+
+Why this direction:
+- the project is already React/Vite
+- JavaScript CAD keeps design parameters, UI state, and export logic close together
+- WebAssembly physics can run locally in the browser
+- early equations are more valuable than a visually impressive but uncalibrated fluid sim
+
+Research anchors:
+- JSCAD describes itself as modular browser and command-line tooling for parametric 2D/3D designs in JavaScript: https://openjscad.xyz/docs/
+- Three.js provides STL tooling for browser rendering workflows: https://threejs.org/docs/pages/STLLoader.html
+- Rapier provides WebAssembly and JavaScript packages for browser physics: https://rapier.rs/
+
 ### Option A — ESP32 + MQTT + Claw bridge
 Best long-term structure.
 
@@ -267,6 +289,22 @@ Good for:
 
 ### Option C — ESPHome + Home Assistant + Claw
 Fastest to prove concept if speed matters more than full custom control.
+
+### Hardware research notes
+
+Early hardware choices should remain boring and serviceable:
+- ESP32-S3 is the default controller target because Espressif documents Wi-Fi, Bluetooth LE, low-power modes, and ESP-IDF support.
+- BME280 or SHT31-class environmental sensing is enough for v1 temperature/humidity context.
+- Capacitive soil moisture sensing is preferred over low-cost resistive probes because soil-contact electrodes corrode and readings drift.
+- A float switch is a reliable first reservoir-level signal before moving to more complex capacitive level sensing.
+- A peristaltic pump is preferred for serviceability and future nutrient dosing because the fluid path stays inside tubing.
+
+Primary references:
+- ESP32-S3: https://www.espressif.com/en/products/socs/esp32-s3
+- ESP-IDF ESP32-S3 docs: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/about.html
+- Bosch BME280: https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/
+- University of Maryland Extension on self-watering container reservoirs and overflow: https://extension.umd.edu/resource/self-watering-containers
+- University of Illinois Extension on container watering and drainage: https://extension.illinois.edu/blogs/flowers-fruits-and-frass/2020-06-22-6-tips-watering-container-gardens
 
 ---
 

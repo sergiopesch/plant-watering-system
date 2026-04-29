@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Virdis Foundry">
+  <rect width="64" height="64" rx="14" fill="#17241c"/>
+  <path d="M32 10c10 4 17 13 17 23 0 11-8 19-17 21-9-2-17-10-17-21 0-10 7-19 17-23Z" fill="#c6e4a5"/>
+  <path d="M32 14v38" stroke="#17241c" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 33c-8-1-13-5-16-12 8 0 13 4 16 12Zm0 9c8-1 13-5 16-12-8 0-13 4-16 12Z" fill="#5f8d68"/>
+</svg>

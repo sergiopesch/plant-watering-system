@@ -1,7 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import App from './App.jsx';
+import Studio from './components/Studio.jsx';
 
-test('renders sign up prompt on the auth screen', () => {
+test('renders the public studio as the default route', () => {
   render(<App />);
-  expect(screen.getByText(/sign up with/i)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /design, simulate, and build/i })).toBeInTheDocument();
+});
+
+test('renders the Virdis Foundry studio workspace', () => {
+  render(<Studio />);
+
+  expect(screen.getByRole('heading', { name: /design, simulate, and build/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /shape the pot/i })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /^petg$/i })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /start building/i })).toBeInTheDocument();
 });

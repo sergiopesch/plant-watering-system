@@ -1,76 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
-import Auth from './components/Auth.jsx';
-import Home from './components/Home.jsx';
-import PlantProfile from './components/PlantProfile.jsx';
-import PlantList from './components/PlantList.jsx';
-import PlantProfileList from './components/PlantProfileList.jsx';
-import NavBar from './components/NavBar.jsx';
-import Header from './components/Header.jsx';
-import UserProfile from './components/UserProfile.jsx';
-import { GlobalProvider } from './GlobalContext.jsx';
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-import PlantGraphs from './components/PlantGraphs.jsx';
-import { getDatabase, ref, get } from "firebase/database";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import HomePage from './components/HomePage.jsx';
-
-const Content = ({ user }) => {
-  const location = useLocation();
-  return (
-    <>
-      {location.pathname !== '/' && <Header />}
-      {location.pathname !== '/' && <NavBar />}
-      <Routes>
-        <Route path="/" element={<Auth />} />
-        <Route path="/home" element={<Home user={user} />} />
-        <Route path="/plant-profile" element={<PlantProfile />} />
-        <Route path="/plant-list" element={<PlantList />} />
-        <Route path="/plant-profile-list" element={<PlantProfileList />} />
-        <Route path="/user-profile" element={<UserProfile user={user} />} />
-        <Route path="/plant-graphs" element={<PlantGraphs />} />
-      </Routes>
-    </>
-  );
-};
+import Studio from './components/Studio.jsx';
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [isNewUser, setIsNewUser] = useState(false);
-
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-        const db = getDatabase();
-        const userRef = ref(db, 'users/' + user.uid);
-        get(userRef).then((snapshot) => {
-          if (snapshot.exists()) {
-            setIsNewUser(snapshot.val().isNewUser);
-          }
-        });
-      } else {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
-  }, []);
-
-  return (
-    <GlobalProvider>
-      <Router>
-        <div className="App">
-          {user ? <HomePage isNewUser={isNewUser} username={user.displayName} /> : <Content user={user} />}
-        </div>
-      </Router>
-    </GlobalProvider>
-  );
+  return <Studio />;
 }
 
 export default App;
