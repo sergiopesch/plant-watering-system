@@ -1,4 +1,6 @@
 .studio-shell {
+  --glow-x: 50%;
+  --glow-y: 50%;
   --pointer-x: 0;
   --pointer-y: 0;
   background: #f4f6ef;
@@ -24,58 +26,66 @@
 .hero-page {
   align-items: center;
   background:
-    linear-gradient(90deg, rgba(16, 25, 19, 0.76), rgba(16, 25, 19, 0.35)),
-    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=1800&q=85");
-  background-position: center;
-  background-size: cover;
+    radial-gradient(circle at 28% 68%, rgba(95, 141, 104, 0.26), transparent 32%),
+    linear-gradient(130deg, #132118 0%, #1f3426 48%, #0f1a14 100%);
+  background-size: 140% 140%, 100% 100%;
   color: #ffffff;
   grid-template-columns: minmax(0, 1fr);
+  isolation: isolate;
+  overflow: hidden;
 }
 
-.leaf-field {
+.hero-page::before,
+.hero-page::after,
+.cta-page::before,
+.cta-page::after {
+  content: "";
   inset: 0;
-  overflow: hidden;
   pointer-events: none;
   position: absolute;
 }
 
-.living-leaf {
-  animation: leaf-breathe 5.8s ease-in-out infinite;
-  animation-delay: var(--leaf-delay);
+.hero-page::before {
+  animation: botanical-drift 42s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate;
   background:
-    radial-gradient(circle at 36% 34%, rgba(255, 255, 255, 0.42), transparent 18%),
-    linear-gradient(135deg, #d5f0a7, #5d9d5c 54%, #23472f);
-  border-radius: 100% 0 100% 0;
-  box-shadow: 0 16px 42px rgba(3, 18, 9, 0.28);
-  height: calc(42px * var(--leaf-scale));
-  left: var(--leaf-x);
-  opacity: 0.82;
-  position: absolute;
-  top: var(--leaf-y);
-  transform:
-    translate3d(calc(var(--pointer-x) * (18px + var(--leaf-index) * 1px)), calc(var(--pointer-y) * (20px + var(--leaf-index) * 0.7px)), 0)
-    rotate(calc(-28deg + var(--pointer-x) * 34deg + var(--leaf-index) * 7deg))
-    scale(var(--leaf-scale));
-  transform-origin: 20% 80%;
-  transition: transform 120ms linear;
-  width: calc(24px * var(--leaf-scale));
+    linear-gradient(90deg, rgba(16, 25, 19, 0.76), rgba(16, 25, 19, 0.34)),
+    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=1800&q=85");
+  background-position: 50% 50%;
+  background-size: auto, 112%;
+  z-index: 0;
 }
 
-.living-leaf::after {
-  background: rgba(255, 255, 255, 0.44);
-  content: "";
-  height: 84%;
-  left: 49%;
-  position: absolute;
-  top: 8%;
-  transform: rotate(12deg);
-  width: 1px;
+.hero-page::after {
+  animation: moisture-field 24s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate;
+  background:
+    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(211, 240, 167, 0.34), transparent 22%),
+    radial-gradient(ellipse at 18% 24%, rgba(198, 228, 165, 0.28), transparent 25%),
+    radial-gradient(ellipse at 78% 18%, rgba(106, 199, 223, 0.18), transparent 30%),
+    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.08) 44%, transparent 62%),
+    repeating-linear-gradient(105deg, transparent 0 64px, rgba(255, 255, 255, 0.045) 65px 66px, transparent 67px 144px);
+  background-size: 100% 100%, 120% 120%, 130% 130%, 220% 220%, 180% 180%;
+  mix-blend-mode: screen;
+  opacity: 0.82;
+  z-index: 1;
 }
 
 .hero-content {
   max-width: min(880px, 72vw);
   position: relative;
-  z-index: 2;
+  z-index: 3;
+}
+
+.hero-content::before {
+  animation: grow-light-scan 16s ease-in-out infinite alternate;
+  background: linear-gradient(90deg, transparent, rgba(198, 228, 165, 0.16), transparent);
+  content: "";
+  height: 1px;
+  left: 0;
+  max-width: 620px;
+  opacity: 0.9;
+  position: absolute;
+  top: -22px;
+  width: 72%;
 }
 
 .studio-kicker {
@@ -125,22 +135,31 @@
 }
 
 .cad-page {
+  animation: pale-field-drift 28s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate;
   background:
     radial-gradient(circle at 76% 20%, rgba(112, 156, 105, 0.22), transparent 26%),
+    radial-gradient(circle at 14% 72%, rgba(103, 183, 196, 0.12), transparent 31%),
     linear-gradient(180deg, #f4f6ef, #e7ece1);
+  background-size: 120% 120%, 140% 140%, 100% 100%;
 }
 
 .electronics-page {
+  animation: circuit-field-drift 22s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate;
   background:
+    radial-gradient(circle at 82% 18%, rgba(198, 228, 165, 0.14), transparent 28%),
     linear-gradient(90deg, rgba(28, 43, 36, 0.92), rgba(43, 63, 51, 0.78)),
     #1f3027;
+  background-size: 120% 120%, 100% 100%, 100% 100%;
   color: #ffffff;
 }
 
 .simulation-page {
+  animation: pale-field-drift 26s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate-reverse;
   background:
     radial-gradient(circle at 30% 30%, rgba(103, 183, 196, 0.22), transparent 27%),
+    radial-gradient(circle at 82% 70%, rgba(112, 156, 105, 0.18), transparent 30%),
     linear-gradient(180deg, #eaf2ee, #dce7dc);
+  background-size: 125% 125%, 130% 130%, 100% 100%;
 }
 
 .section-copy {
@@ -249,6 +268,7 @@
 }
 
 .circuit-board::before {
+  animation: circuit-grid-scan 16s linear infinite;
   background:
     linear-gradient(90deg, rgba(198, 228, 165, 0.2) 1px, transparent 1px),
     linear-gradient(rgba(198, 228, 165, 0.2) 1px, transparent 1px);
@@ -329,17 +349,79 @@
 
 .cta-page {
   background:
-    linear-gradient(90deg, rgba(16, 25, 19, 0.82), rgba(16, 25, 19, 0.42)),
-    url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1800&q=85");
-  background-position: center;
-  background-size: cover;
+    radial-gradient(circle at 24% 72%, rgba(198, 228, 165, 0.16), transparent 34%),
+    linear-gradient(135deg, #111d16, #1c3024 52%, #0f1a14);
   color: #ffffff;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.cta-page::before {
+  animation: cta-plant-grow 56s cubic-bezier(0.42, 0, 0.16, 1) infinite alternate;
+  background:
+    linear-gradient(90deg, rgba(16, 25, 19, 0.84), rgba(16, 25, 19, 0.36)),
+    url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1800&q=85");
+  background-position: 50% 56%;
+  background-size: auto, 106%;
+  z-index: 0;
+}
+
+.cta-page::after {
+  animation: moisture-field 26s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate-reverse;
+  background:
+    radial-gradient(ellipse at var(--glow-x) 84%, rgba(198, 228, 165, 0.24), transparent 28%),
+    radial-gradient(ellipse at 22% 76%, rgba(198, 228, 165, 0.28), transparent 26%),
+    radial-gradient(ellipse at 78% 18%, rgba(106, 199, 223, 0.16), transparent 34%),
+    linear-gradient(125deg, transparent 0%, rgba(255, 255, 255, 0.08) 46%, transparent 60%);
+  background-size: 100% 100%, 130% 130%, 120% 120%, 220% 220%;
+  mix-blend-mode: screen;
+  opacity: 0.72;
+  z-index: 1;
+}
+
+.growth-field {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.growth-field::before {
+  animation: growth-rise 18s cubic-bezier(0.2, 0.72, 0.18, 1) both;
+  background:
+    linear-gradient(90deg, transparent 0 48%, rgba(198, 228, 165, 0.34) 49% 51%, transparent 52%),
+    radial-gradient(ellipse at 42% 48%, rgba(198, 228, 165, 0.28), transparent 12%),
+    radial-gradient(ellipse at 58% 36%, rgba(106, 199, 223, 0.18), transparent 13%),
+    radial-gradient(ellipse at 47% 18%, rgba(198, 228, 165, 0.2), transparent 11%);
+  bottom: 0;
+  clip-path: inset(100% 0 0);
+  content: "";
+  filter: blur(0.2px);
+  height: 62%;
+  left: 55%;
+  max-width: 520px;
+  opacity: 0.72;
+  position: absolute;
+  width: 38%;
+}
+
+.growth-field::after {
+  animation: root-glow 12s ease-in-out infinite alternate;
+  background: radial-gradient(ellipse at 62% 100%, rgba(198, 228, 165, 0.3), transparent 34%);
+  bottom: -18%;
+  content: "";
+  height: 46%;
+  left: 0;
+  opacity: 0.72;
+  position: absolute;
+  width: 100%;
 }
 
 .cta-panel {
   max-width: 850px;
   position: relative;
-  z-index: 1;
+  z-index: 3;
 }
 
 .cta-panel h2 {
@@ -376,13 +458,121 @@
   background: #ffffff;
 }
 
-@keyframes leaf-breathe {
-  0%,
-  100% {
-    margin-top: 0;
+@keyframes botanical-drift {
+  0% {
+    background-position: 50% 50%, 48% 48%;
+    background-size: auto, 106%;
+    filter: saturate(0.94) brightness(0.94);
   }
-  50% {
-    margin-top: -18px;
+  45% {
+    filter: saturate(1.08) brightness(1);
+  }
+  100% {
+    background-position: 50% 50%, 56% 52%;
+    background-size: auto, 118%;
+    filter: saturate(1.02) brightness(0.96);
+  }
+}
+
+@keyframes moisture-field {
+  0% {
+    background-position: 50% 50%, 0% 0%, 100% 20%, 0% 50%, 0% 0%;
+  }
+  100% {
+    background-position: 50% 50%, 100% 70%, 18% 100%, 100% 50%, 100% 100%;
+  }
+}
+
+@keyframes grow-light-scan {
+  0% {
+    opacity: 0.42;
+    width: 42%;
+  }
+  100% {
+    opacity: 0.96;
+    width: 72%;
+  }
+}
+
+@keyframes cta-plant-grow {
+  0% {
+    background-position: 50% 56%, 50% 58%;
+    background-size: auto, 104%;
+    filter: saturate(0.94) brightness(0.92);
+  }
+  54% {
+    filter: saturate(1.08) brightness(1);
+  }
+  100% {
+    background-position: 50% 56%, 50% 45%;
+    background-size: auto, 119%;
+    filter: saturate(1.02) brightness(0.96);
+  }
+}
+
+@keyframes growth-rise {
+  0% {
+    clip-path: inset(100% 0 0);
+    opacity: 0;
+  }
+  64% {
+    opacity: 0.76;
+  }
+  100% {
+    clip-path: inset(0 0 0);
+    opacity: 0.58;
+  }
+}
+
+@keyframes root-glow {
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0.78;
+  }
+}
+
+@keyframes pale-field-drift {
+  0% {
+    background-position: 80% 20%, 8% 74%, 0 0;
+  }
+  100% {
+    background-position: 68% 28%, 22% 62%, 0 0;
+  }
+}
+
+@keyframes circuit-field-drift {
+  0% {
+    background-position: 82% 18%, 0 0, 0 0;
+  }
+  100% {
+    background-position: 72% 28%, 0 0, 0 0;
+  }
+}
+
+@keyframes circuit-grid-scan {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 42px 0, 0 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-page::before,
+  .hero-page::after,
+  .hero-content::before,
+  .cad-page,
+  .electronics-page,
+  .simulation-page,
+  .circuit-board::before,
+  .cta-page::before,
+  .cta-page::after,
+  .growth-field::before,
+  .growth-field::after {
+    animation: none;
   }
 }
 

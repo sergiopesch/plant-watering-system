@@ -1,6 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Self-contained smart plant pot">
-  <rect width="64" height="64" rx="14" fill="#17241c"/>
-  <path d="M32 10c10 4 17 13 17 23 0 11-8 19-17 21-9-2-17-10-17-21 0-10 7-19 17-23Z" fill="#c6e4a5"/>
-  <path d="M32 14v38" stroke="#17241c" stroke-width="3" stroke-linecap="round"/>
-  <path d="M32 33c-8-1-13-5-16-12 8 0 13 4 16 12Zm0 9c8-1 13-5 16-12-8 0-13 4-16 12Z" fill="#5f8d68"/>
+  <defs>
+    <linearGradient id="pot" x1="18" x2="46" y1="28" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6f9b72"/>
+      <stop offset="1" stop-color="#375743"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="20" x2="44" y1="7" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d8f4a6"/>
+      <stop offset="1" stop-color="#67a96f"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#142119"/>
+  <circle cx="48" cy="15" r="5" fill="#6ac7df"/>
+  <path d="M42 17h-7c-3 0-5 2-5 5v5" fill="none" stroke="#6ac7df" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M23 27h18c3 0 5 3 4 6l-4 18c-1 3-3 5-6 5h-6c-3 0-5-2-6-5l-4-18c-1-3 1-6 4-6Z" fill="url(#pot)"/>
+  <path d="M21 37h22l-2 9H23l-2-9Z" fill="#6ac7df" opacity=".78"/>
+  <path d="M20 31h24" fill="none" stroke="#d8e8c9" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M32 29V14" fill="none" stroke="#d8f4a6" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M31 18c-7-1-11-5-13-11 7 0 12 4 13 11Z" fill="url(#leaf)"/>
+  <path d="M33 22c7-1 11-5 13-11-7 0-12 4-13 11Z" fill="url(#leaf)"/>
+  <path d="M28 47h8" stroke="#142119" stroke-width="2.4" stroke-linecap="round" opacity=".62"/>
 </svg>

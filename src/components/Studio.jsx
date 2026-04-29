@@ -45,8 +45,6 @@ const electronics = [
   { label: 'BH1750 / VEML7700', detail: 'Light signal for water demand modeling' },
 ];
 
-const leafCount = 18;
-
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -79,6 +77,8 @@ function usePointerField() {
       current.current.y += (target.current.y - current.current.y) * 0.08;
       element.style.setProperty('--pointer-x', current.current.x.toFixed(4));
       element.style.setProperty('--pointer-y', current.current.y.toFixed(4));
+      element.style.setProperty('--glow-x', `${(50 + current.current.x * 8).toFixed(2)}%`);
+      element.style.setProperty('--glow-y', `${(50 + current.current.y * 6).toFixed(2)}%`);
       frameId = requestAnimationFrame(animate);
     };
 
@@ -313,22 +313,6 @@ const Studio = () => {
   return (
     <main ref={shellRef} className="studio-shell">
       <section id="origin" className="studio-page hero-page" aria-labelledby="studio-title">
-        <div className="leaf-field" aria-hidden="true">
-          {Array.from({ length: leafCount }, (_, index) => (
-            <span
-              key={index}
-              className="living-leaf"
-              style={{
-                '--leaf-index': index,
-                '--leaf-x': `${8 + ((index * 17) % 84)}%`,
-                '--leaf-y': `${10 + ((index * 23) % 78)}%`,
-                '--leaf-scale': `${0.72 + (index % 5) * 0.16}`,
-                '--leaf-delay': `${index * -0.37}s`,
-              }}
-            />
-          ))}
-        </div>
-
         <div className="hero-content">
           <p className="studio-kicker">Design system v0.1</p>
           <h1 id="studio-title">Design, simulate, and build self-contained smart pots.</h1>
@@ -501,6 +485,7 @@ const Studio = () => {
       </section>
 
       <section className="studio-page cta-page" aria-labelledby="cta-title">
+        <div className="growth-field" aria-hidden="true" />
         <div className="cta-panel">
           <p className="studio-kicker">Build the first living prototype</p>
           <h2 id="cta-title">Start with a printable pot, then teach it to care for itself.</h2>
