@@ -1,6 +1,6 @@
 # Security
 
-Virdis Foundry currently has a small browser-only runtime surface:
+This project currently has a small browser-only runtime surface:
 
 - React
 - React DOM

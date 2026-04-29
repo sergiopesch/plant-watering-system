@@ -7,7 +7,7 @@ test('renders the public studio as the default route', () => {
   expect(screen.getByRole('heading', { name: /design, simulate, and build/i })).toBeInTheDocument();
 });
 
-test('renders the Virdis Foundry studio workspace', () => {
+test('renders the smart plant pot studio workspace', () => {
   render(<Studio />);
 
   expect(screen.getByRole('heading', { name: /design, simulate, and build/i })).toBeInTheDocument();

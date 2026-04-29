@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { chromium } from '@playwright/test';
 
-const bannerPath = process.env.BANNER_PATH || 'docs/assets/virdis-foundry-banner.jpg';
+const bannerPath = process.env.BANNER_PATH || 'docs/assets/self-contained-smart-pot-banner.jpg';
 const productUrl = process.env.BANNER_URL || 'http://localhost:3001/';
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || '/snap/bin/chromium';
 

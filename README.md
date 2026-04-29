@@ -1,8 +1,8 @@
-# Virdis Foundry
+# Plant Watering System
 
-![Virdis Foundry product screenshot](docs/assets/virdis-foundry-banner.jpg)
+![Self-contained smart plant pot screenshot](docs/assets/self-contained-smart-pot-banner.jpg)
 
-Virdis Foundry is a public, immersive digital product studio for self-contained, autonomous plant pots.
+This project is evolving into a public, immersive digital product studio for self-contained, autonomous plant pots.
 
 The intended workflow is:
 
@@ -17,8 +17,8 @@ The studio is available at `/` during local development.
 
 It includes:
 
-- Virdis Foundry branding and product direction
-- Virdis metadata, manifest branding, and SVG favicon
+- project metadata, manifest branding, and SVG favicon
+- product direction for a self-contained smart plant pot system
 - living pointer-responsive leaves in the opening scene
 - a one-page-at-a-time immersive flow
 - parametric pot geometry controls

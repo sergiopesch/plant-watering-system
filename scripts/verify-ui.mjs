@@ -91,7 +91,7 @@ async function inspectViewport(browser, viewport) {
 function assertReport(report) {
   const failures = [];
 
-  if (report.title !== 'Virdis Foundry') failures.push(`unexpected title: ${report.title}`);
+  if (report.title !== 'Self-Contained Smart Plant Pot') failures.push(`unexpected title: ${report.title}`);
   if (report.favicon !== '/favicon.svg') failures.push(`unexpected favicon: ${report.favicon}`);
   if (!report.hasCta) failures.push('missing CTA button');
   if (report.clippedSections.length > 0) failures.push(`clipped sections: ${report.clippedSections.join(', ')}`);
