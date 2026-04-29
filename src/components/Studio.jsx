@@ -277,7 +277,6 @@ const ThreeStage = ({ variant, diameter, height, reservoir, materialColor, light
 
 const Studio = () => {
   const shellRef = usePointerField();
-  const ctaRef = useRef(null);
   const [diameter, setDiameter] = useState(180);
   const [height, setHeight] = useState(215);
   const [reservoir, setReservoir] = useState(0.9);
@@ -286,26 +285,6 @@ const Studio = () => {
   const [light, setLight] = useState(62);
   const [plantId, setPlantId] = useState('aroid');
   const [materialId, setMaterialId] = useState('petg');
-  const [ctaIsGrowing, setCtaIsGrowing] = useState(false);
-
-  useEffect(() => {
-    const element = ctaRef.current;
-    if (!element) return undefined;
-    if (typeof IntersectionObserver === 'undefined') {
-      setCtaIsGrowing(true);
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setCtaIsGrowing(true);
-      },
-      { threshold: 0.38 },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
 
   const selectedPlant = plantProfiles.find((plant) => plant.id === plantId);
   const selectedMaterial = materials.find((material) => material.id === materialId);
@@ -505,19 +484,7 @@ const Studio = () => {
         </div>
       </section>
 
-      <section
-        ref={ctaRef}
-        className={`studio-page cta-page${ctaIsGrowing ? ' is-growing' : ''}`}
-        aria-labelledby="cta-title"
-      >
-        <div className="footer-plant" aria-hidden="true">
-          <div className="footer-plant-frame">
-            <img
-              src="https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=90"
-              alt=""
-            />
-          </div>
-        </div>
+      <section className="studio-page cta-page" aria-labelledby="cta-title">
         <div className="cta-panel">
           <p className="studio-kicker">Build the first living prototype</p>
           <h2 id="cta-title">Start with a printable pot, then teach it to care for itself.</h2>
