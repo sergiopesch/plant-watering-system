@@ -1,13 +1,23 @@
 .studio-shell {
   --glow-x: 50%;
   --glow-y: 50%;
+  --panorama-light-x: -34vw;
+  --panorama-progress: 0;
+  --panorama-scale: 1.08;
+  --panorama-shift-x: -19vw;
+  --panorama-shift-y: -1.2vh;
+  --panorama-tilt: -7.5deg;
+  --panorama-x: 22%;
+  --panorama-y: 51%;
   --pointer-x: 0;
   --pointer-y: 0;
+  --section-copy-opacity: 1;
+  --section-copy-y: 0vh;
   background: #f4f6ef;
   color: #17241c;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Avenir Next", "Trebuchet MS", Verdana, sans-serif;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
   scroll-snap-type: y proximity;
   scroll-behavior: smooth;
   text-align: left;
@@ -24,19 +34,22 @@
 }
 
 .hero-page {
-  align-items: center;
-  background:
-    radial-gradient(circle at 28% 68%, rgba(95, 141, 104, 0.26), transparent 32%),
-    linear-gradient(130deg, #132118 0%, #1f3426 48%, #0f1a14 100%);
-  background-size: 140% 140%, 100% 100%;
+  align-content: start;
+  background: #07100c;
   color: #ffffff;
   grid-template-columns: minmax(0, 1fr);
   isolation: isolate;
-  overflow: hidden;
+  min-height: 128svh;
+  overflow: visible;
+  padding: 0;
 }
 
-.hero-page::before,
-.hero-page::after,
+.cad-page::before,
+.cad-page::after,
+.electronics-page::before,
+.electronics-page::after,
+.simulation-page::before,
+.simulation-page::after,
 .cta-page::before,
 .cta-page::after {
   content: "";
@@ -45,33 +58,166 @@
   position: absolute;
 }
 
-.hero-page::before {
-  animation: botanical-drift 42s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate;
-  background:
-    linear-gradient(90deg, rgba(16, 25, 19, 0.76), rgba(16, 25, 19, 0.34)),
-    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=1800&q=85");
-  background-position: 50% 50%;
-  background-size: auto, 112%;
+[data-panorama-section] {
+  --section-copy-opacity: 1;
+  --section-copy-y: 0vh;
+  isolation: isolate;
+}
+
+.cad-page,
+.electronics-page,
+.simulation-page {
+  overflow: hidden;
+}
+
+.cad-page::before,
+.electronics-page::before,
+.simulation-page::before {
+  animation: panorama-breathe 34s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate;
+  background-position: center, center, var(--panorama-x) var(--panorama-y);
+  background-size: 100% 100%, 100% 100%, max(168vw, 136vh) auto;
+  filter: saturate(1.08) contrast(1.04);
+  inset: -10vmax -16vmax;
+  transform: translate3d(var(--panorama-shift-x), var(--panorama-shift-y), 0) rotateY(var(--panorama-tilt)) scale(var(--panorama-scale));
+  transform-origin: center;
   z-index: 0;
 }
 
-.hero-page::after {
-  animation: moisture-field 24s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate;
+.cad-page::before {
   background:
-    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(211, 240, 167, 0.34), transparent 22%),
-    radial-gradient(ellipse at 18% 24%, rgba(198, 228, 165, 0.28), transparent 25%),
-    radial-gradient(ellipse at 78% 18%, rgba(106, 199, 223, 0.18), transparent 30%),
-    linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.08) 44%, transparent 62%),
-    repeating-linear-gradient(105deg, transparent 0 64px, rgba(255, 255, 255, 0.045) 65px 66px, transparent 67px 144px);
-  background-size: 100% 100%, 120% 120%, 130% 130%, 220% 220%, 180% 180%;
-  mix-blend-mode: screen;
-  opacity: 0.82;
+    linear-gradient(90deg, rgba(240, 246, 232, 0.96) 0%, rgba(237, 245, 230, 0.78) 34%, rgba(239, 246, 233, 0.5) 70%, rgba(229, 237, 222, 0.92) 100%),
+    linear-gradient(180deg, rgba(246, 250, 242, 0.5), rgba(219, 230, 214, 0.78)),
+    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
+}
+
+.electronics-page::before {
+  background:
+    linear-gradient(90deg, rgba(6, 12, 9, 0.94) 0%, rgba(15, 27, 20, 0.72) 36%, rgba(18, 33, 25, 0.5) 72%, rgba(6, 12, 9, 0.9) 100%),
+    linear-gradient(180deg, rgba(4, 8, 6, 0.28), rgba(4, 8, 6, 0.78)),
+    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
+}
+
+.simulation-page::before {
+  background:
+    linear-gradient(90deg, rgba(231, 242, 236, 0.96) 0%, rgba(218, 236, 229, 0.72) 34%, rgba(211, 232, 231, 0.46) 70%, rgba(224, 235, 223, 0.88) 100%),
+    linear-gradient(180deg, rgba(239, 249, 244, 0.48), rgba(206, 225, 217, 0.78)),
+    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
+}
+
+.cad-page::after,
+.electronics-page::after,
+.simulation-page::after {
+  background-position: var(--panorama-light-x) 50%, 0 0, var(--glow-x) var(--glow-y);
+  inset: 0;
+  opacity: 0.72;
+  transform: translate3d(0, calc(var(--panorama-progress) * -2vh), 0);
   z-index: 1;
+}
+
+.cad-page::after {
+  background:
+    linear-gradient(104deg, transparent 0%, rgba(92, 130, 97, 0.18) 46%, rgba(92, 190, 205, 0.1) 54%, transparent 68%),
+    linear-gradient(90deg, rgba(35, 55, 43, 0.05) 1px, transparent 1px),
+    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(122, 168, 107, 0.18), transparent 30%);
+  background-size: 150% 100%, 36px 36px, 110% 110%;
+  mix-blend-mode: multiply;
+}
+
+.electronics-page::after {
+  background:
+    linear-gradient(104deg, transparent 0%, rgba(198, 228, 165, 0.2) 45%, rgba(101, 197, 211, 0.12) 55%, transparent 70%),
+    linear-gradient(90deg, rgba(198, 228, 165, 0.11) 1px, transparent 1px),
+    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(198, 228, 165, 0.18), transparent 28%);
+  background-size: 150% 100%, 46px 46px, 110% 110%;
+  mix-blend-mode: screen;
+}
+
+.simulation-page::after {
+  background:
+    linear-gradient(104deg, transparent 0%, rgba(103, 183, 196, 0.18) 44%, rgba(198, 228, 165, 0.13) 56%, transparent 70%),
+    linear-gradient(90deg, rgba(36, 72, 67, 0.05) 1px, transparent 1px),
+    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(96, 162, 151, 0.18), transparent 30%);
+  background-size: 150% 100%, 40px 40px, 110% 110%;
+  mix-blend-mode: multiply;
+}
+
+.cad-page::before,
+.electronics-page::before,
+.simulation-page::before {
+  background-position: center, center, var(--panorama-x) var(--panorama-y);
+  background-size: 100% 100%, 100% 100%, max(168vw, 136vh) auto;
+}
+
+.cad-page::after,
+.electronics-page::after,
+.simulation-page::after {
+  background-position: var(--panorama-light-x) 50%, 0 0, var(--glow-x) var(--glow-y);
+}
+
+.hero-viewport {
+  align-items: center;
+  display: grid;
+  min-height: 100svh;
+  overflow: hidden;
+  padding: clamp(28px, 4vw, 48px) clamp(14px, 4vw, 64px);
+  position: sticky;
+  top: 0;
+}
+
+.hero-panorama,
+.hero-panorama__image,
+.hero-panorama__depth,
+.hero-panorama__veil {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.hero-panorama {
+  inset: -9vmax -16vmax;
+  overflow: hidden;
+  perspective: 1300px;
+  z-index: 0;
+}
+
+.hero-panorama__image {
+  animation: panorama-breathe 32s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate;
+  background:
+    linear-gradient(90deg, rgba(4, 9, 7, 0.92) 0%, rgba(8, 17, 12, 0.48) 34%, rgba(8, 17, 12, 0.18) 68%, rgba(4, 9, 7, 0.78) 100%),
+    linear-gradient(180deg, rgba(5, 9, 7, 0.1), rgba(5, 9, 7, 0.46)),
+    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
+  background-position: center, center, var(--panorama-x) var(--panorama-y);
+  background-size: 100% 100%, 100% 100%, max(176vw, 148vh) auto;
+  filter: saturate(1.08) contrast(1.06) brightness(0.78);
+  transform: translate3d(var(--panorama-shift-x), var(--panorama-shift-y), 0) rotateY(var(--panorama-tilt)) scale(var(--panorama-scale));
+  transform-origin: center;
+}
+
+.hero-panorama__depth {
+  background:
+    linear-gradient(105deg, rgba(190, 227, 151, 0) 0 36%, rgba(190, 227, 151, 0.18) 46%, rgba(83, 190, 205, 0.1) 52%, rgba(190, 227, 151, 0) 64%),
+    repeating-linear-gradient(93deg, rgba(255, 255, 255, 0) 0 9vw, rgba(255, 255, 255, 0.055) 9.08vw 9.14vw, rgba(255, 255, 255, 0) 9.26vw 18vw);
+  mix-blend-mode: screen;
+  opacity: 0.56;
+  transform: translate3d(var(--panorama-light-x), 0, 0) skewX(-8deg);
+}
+
+.hero-panorama__veil {
+  background:
+    linear-gradient(180deg, rgba(4, 9, 7, 0.12) 0%, rgba(4, 9, 7, 0) 38%, rgba(4, 9, 7, 0.42) 100%),
+    linear-gradient(96deg, transparent 0%, rgba(210, 239, 158, 0.22) 44%, rgba(83, 190, 205, 0.1) 52%, transparent 66%),
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.08) 42%, transparent 58%);
+  background-size: 100% 100%, 120% 120%, 240% 240%;
+  background-position: center, var(--glow-x) var(--glow-y), center;
+  mix-blend-mode: screen;
+  opacity: 0.9;
 }
 
 .hero-content {
   max-width: min(880px, 72vw);
+  opacity: var(--section-copy-opacity);
   position: relative;
+  transform: translate3d(0, var(--section-copy-y), 0);
   z-index: 3;
 }
 
@@ -135,37 +281,39 @@
 }
 
 .cad-page {
-  animation: pale-field-drift 28s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate;
-  background:
-    radial-gradient(circle at 76% 20%, rgba(112, 156, 105, 0.22), transparent 26%),
-    radial-gradient(circle at 14% 72%, rgba(103, 183, 196, 0.12), transparent 31%),
-    linear-gradient(180deg, #f4f6ef, #e7ece1);
-  background-size: 120% 120%, 140% 140%, 100% 100%;
+  background: #eaf1e5;
 }
 
 .electronics-page {
-  animation: circuit-field-drift 22s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate;
-  background:
-    radial-gradient(circle at 82% 18%, rgba(198, 228, 165, 0.14), transparent 28%),
-    linear-gradient(90deg, rgba(28, 43, 36, 0.92), rgba(43, 63, 51, 0.78)),
-    #1f3027;
-  background-size: 120% 120%, 100% 100%, 100% 100%;
+  background: #101d16;
   color: #ffffff;
 }
 
 .simulation-page {
-  animation: pale-field-drift 26s cubic-bezier(0.42, 0, 0.2, 1) infinite alternate-reverse;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(103, 183, 196, 0.22), transparent 27%),
-    radial-gradient(circle at 82% 70%, rgba(112, 156, 105, 0.18), transparent 30%),
-    linear-gradient(180deg, #eaf2ee, #dce7dc);
-  background-size: 125% 125%, 130% 130%, 100% 100%;
+  background: #ddeae4;
 }
 
 .section-copy {
   margin: 0 auto 24px;
   max-width: 1180px;
+  opacity: var(--section-copy-opacity);
+  position: relative;
+  transform: translate3d(0, var(--section-copy-y), 0);
   width: 100%;
+  z-index: 2;
+}
+
+.cad-page .studio-kicker {
+  color: #527b57;
+}
+
+.simulation-page .studio-kicker {
+  color: #4c8278;
+}
+
+.cad-page .section-copy p,
+.simulation-page .section-copy p {
+  color: rgba(23, 36, 28, 0.78);
 }
 
 .section-copy h2 {
@@ -184,7 +332,26 @@
   grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
   margin: 0 auto;
   max-width: 1180px;
+  position: relative;
   width: 100%;
+  z-index: 2;
+}
+
+.cad-page .control-surface,
+.cad-page .three-stage,
+.electronics-page .control-surface,
+.electronics-page .circuit-board article,
+.simulation-page .control-surface,
+.simulation-page .three-stage {
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 70px rgba(15, 25, 18, 0.1);
+}
+
+.cad-page .three-stage {
+  background:
+    linear-gradient(90deg, rgba(39, 54, 46, 0.07) 1px, transparent 1px),
+    linear-gradient(rgba(39, 54, 46, 0.07) 1px, transparent 1px),
+    rgba(255, 255, 255, 0.58);
 }
 
 .three-stage {
@@ -202,7 +369,7 @@
 .simulation-grid .three-stage {
   background:
     linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
-    #dbe8de;
+    rgba(219, 232, 222, 0.72);
 }
 
 .three-stage canvas {
@@ -308,7 +475,7 @@
 }
 
 .electronics-controls {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .segmented-options {
@@ -419,19 +586,15 @@
   background: #ffffff;
 }
 
-@keyframes botanical-drift {
+@keyframes panorama-breathe {
   0% {
-    background-position: 50% 50%, 48% 48%;
-    background-size: auto, 106%;
-    filter: saturate(0.94) brightness(0.94);
+    filter: saturate(1.02) contrast(1.04) brightness(0.74);
   }
-  45% {
-    filter: saturate(1.08) brightness(1);
+  46% {
+    filter: saturate(1.13) contrast(1.07) brightness(0.8);
   }
   100% {
-    background-position: 50% 50%, 56% 52%;
-    background-size: auto, 118%;
-    filter: saturate(1.02) brightness(0.96);
+    filter: saturate(1.08) contrast(1.05) brightness(0.76);
   }
 }
 
@@ -471,24 +634,6 @@
   }
 }
 
-@keyframes pale-field-drift {
-  0% {
-    background-position: 80% 20%, 8% 74%, 0 0;
-  }
-  100% {
-    background-position: 68% 28%, 22% 62%, 0 0;
-  }
-}
-
-@keyframes circuit-field-drift {
-  0% {
-    background-position: 82% 18%, 0 0, 0 0;
-  }
-  100% {
-    background-position: 72% 28%, 0 0, 0 0;
-  }
-}
-
 @keyframes circuit-grid-scan {
   0% {
     background-position: 0 0, 0 0;
@@ -499,9 +644,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-page::before,
-  .hero-page::after,
+  .hero-panorama__image,
   .hero-content::before,
+  .cad-page::before,
+  .electronics-page::before,
+  .simulation-page::before,
   .cad-page,
   .electronics-page,
   .simulation-page,
@@ -509,6 +656,24 @@
   .cta-page::before,
   .cta-page::after {
     animation: none;
+  }
+
+  .hero-content,
+  .hero-panorama__image,
+  .hero-panorama__depth,
+  .section-copy,
+  .cad-page::before,
+  .cad-page::after,
+  .electronics-page::before,
+  .electronics-page::after,
+  .simulation-page::before,
+  .simulation-page::after {
+    transform: none;
+  }
+
+  .hero-content,
+  .section-copy {
+    opacity: 1;
   }
 }
 
@@ -531,9 +696,17 @@
     padding: 54px 12px;
   }
 
-  .hero-page,
+  .hero-page {
+    min-height: 118svh;
+    padding: 0;
+  }
+
   .cta-page {
     min-height: 100svh;
+  }
+
+  .hero-viewport {
+    padding: 54px 14px;
   }
 
   .hero-content h1 {

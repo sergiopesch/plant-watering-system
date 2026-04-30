@@ -57,12 +57,36 @@ function usePointerField() {
   const shellRef = useRef(null);
   const target = useRef({ x: 0, y: 0 });
   const current = useRef({ x: 0, y: 0 });
+  const sectionProgress = useRef(new Map());
 
   useEffect(() => {
     const element = shellRef.current;
     if (!element) return undefined;
 
     let frameId;
+    const panoramaSections = Array.from(element.querySelectorAll('[data-panorama-section]'));
+    const panoramaMotion = {
+      hero: {
+        x: 22, xMove: 58, y: 51, yMove: 7, shiftX: -19, shiftMove: 38,
+        shiftY: -1.2, shiftYMove: 2.4, tilt: -7.5, tiltMove: 15,
+        light: -34, lightMove: 76, copyMove: -5, opacityLoss: 0.28,
+      },
+      cad: {
+        x: 78, xMove: -46, y: 55, yMove: -5, shiftX: 14, shiftMove: -28,
+        shiftY: -0.5, shiftYMove: 1.4, tilt: 5.5, tiltMove: -11,
+        light: 38, lightMove: -76, copyMove: -1.6, opacityLoss: 0,
+      },
+      electronics: {
+        x: 24, xMove: 56, y: 48, yMove: 8, shiftX: -16, shiftMove: 32,
+        shiftY: -1.2, shiftYMove: 2, tilt: -6, tiltMove: 12,
+        light: -42, lightMove: 84, copyMove: -2.4, opacityLoss: 0,
+      },
+      simulation: {
+        x: 74, xMove: -52, y: 52, yMove: 6, shiftX: 13, shiftMove: -34,
+        shiftY: -0.7, shiftYMove: 1.8, tilt: 6.5, tiltMove: -14,
+        light: 40, lightMove: -84, copyMove: -2, opacityLoss: 0,
+      },
+    };
 
     const setTarget = (clientX, clientY) => {
       const rect = element.getBoundingClientRect();
@@ -71,22 +95,62 @@ function usePointerField() {
     };
 
     const handlePointerMove = (event) => setTarget(event.clientX, event.clientY);
+    const handlePointerLeave = () => {
+      target.current.x = 0;
+      target.current.y = 0;
+    };
+
+    const updateScrollJourney = () => {
+      panoramaSections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        const isHero = section.dataset.panoramaSection === 'hero';
+        const rawProgress = isHero
+          ? -rect.top / Math.max(rect.height - window.innerHeight, window.innerHeight * 0.18)
+          : (window.innerHeight - rect.top) / Math.max(window.innerHeight + rect.height, 1);
+        sectionProgress.current.set(section, clamp(rawProgress, 0, 1));
+      });
+    };
 
     const animate = () => {
       current.current.x += (target.current.x - current.current.x) * 0.08;
       current.current.y += (target.current.y - current.current.y) * 0.08;
+
       element.style.setProperty('--pointer-x', current.current.x.toFixed(4));
       element.style.setProperty('--pointer-y', current.current.y.toFixed(4));
       element.style.setProperty('--glow-x', `${(50 + current.current.x * 8).toFixed(2)}%`);
       element.style.setProperty('--glow-y', `${(50 + current.current.y * 6).toFixed(2)}%`);
+
+      panoramaSections.forEach((section) => {
+        const progress = sectionProgress.current.get(section) ?? 0;
+        const easedJourney = progress * progress * (3 - 2 * progress);
+        const motion = panoramaMotion[section.dataset.panoramaSection] ?? panoramaMotion.hero;
+        section.style.setProperty('--panorama-progress', easedJourney.toFixed(4));
+        section.style.setProperty('--panorama-x', `${(motion.x + easedJourney * motion.xMove + current.current.x * 3.2).toFixed(2)}%`);
+        section.style.setProperty('--panorama-y', `${(motion.y + easedJourney * motion.yMove - current.current.y * 2.4).toFixed(2)}%`);
+        section.style.setProperty('--panorama-shift-x', `${(motion.shiftX + easedJourney * motion.shiftMove + current.current.x * 3.4).toFixed(2)}vw`);
+        section.style.setProperty('--panorama-shift-y', `${(motion.shiftY + easedJourney * motion.shiftYMove - current.current.y * 1.2).toFixed(2)}vh`);
+        section.style.setProperty('--panorama-tilt', `${(motion.tilt + easedJourney * motion.tiltMove + current.current.x * 1.2).toFixed(2)}deg`);
+        section.style.setProperty('--panorama-scale', (1.08 + easedJourney * 0.08).toFixed(4));
+        section.style.setProperty('--panorama-light-x', `${(motion.light + easedJourney * motion.lightMove + current.current.x * 5).toFixed(2)}vw`);
+        section.style.setProperty('--section-copy-y', `${(motion.copyMove * easedJourney + current.current.y * 0.35).toFixed(2)}vh`);
+        section.style.setProperty('--section-copy-opacity', (1 - easedJourney * motion.opacityLoss).toFixed(4));
+      });
+
       frameId = requestAnimationFrame(animate);
     };
 
     element.addEventListener('pointermove', handlePointerMove);
+    element.addEventListener('pointerleave', handlePointerLeave);
+    window.addEventListener('scroll', updateScrollJourney, { passive: true });
+    window.addEventListener('resize', updateScrollJourney);
+    updateScrollJourney();
     animate();
 
     return () => {
       element.removeEventListener('pointermove', handlePointerMove);
+      element.removeEventListener('pointerleave', handlePointerLeave);
+      window.removeEventListener('scroll', updateScrollJourney);
+      window.removeEventListener('resize', updateScrollJourney);
       cancelAnimationFrame(frameId);
     };
   }, []);
@@ -312,18 +376,31 @@ const Studio = () => {
 
   return (
     <main ref={shellRef} className="studio-shell">
-      <section id="origin" className="studio-page hero-page" aria-labelledby="studio-title">
-        <div className="hero-content">
-          <p className="studio-kicker">Design system v0.1</p>
-          <h1 id="studio-title">Design, simulate, and build self-contained smart pots.</h1>
-          <p>
-            A digital workshop for moving from pot geometry to sensor strategy, watering intelligence,
-            printable parts, and field-tested autonomy.
-          </p>
+      <section
+        id="origin"
+        className="studio-page hero-page"
+        aria-labelledby="studio-title"
+        data-panorama-hero
+        data-panorama-section="hero"
+      >
+        <div className="hero-viewport">
+          <div className="hero-panorama" aria-hidden="true">
+            <div className="hero-panorama__image" />
+            <div className="hero-panorama__depth" />
+            <div className="hero-panorama__veil" />
+          </div>
+          <div className="hero-content">
+            <p className="studio-kicker">Design system v0.1</p>
+            <h1 id="studio-title">Design, simulate, and build self-contained smart pots.</h1>
+            <p>
+              A digital workshop for moving from pot geometry to sensor strategy, watering intelligence,
+              printable parts, and field-tested autonomy.
+            </p>
+          </div>
         </div>
       </section>
 
-      <section id="cad" className="studio-page cad-page" aria-labelledby="cad-title">
+      <section id="cad" className="studio-page cad-page" aria-labelledby="cad-title" data-panorama-section="cad">
         <div className="section-copy">
           <p className="studio-kicker">Page 02 / CAD 3D</p>
           <h2 id="cad-title">Shape the pot as a printable, serviceable machine.</h2>
@@ -373,7 +450,7 @@ const Studio = () => {
         </div>
       </section>
 
-      <section id="electronics" className="studio-page electronics-page" aria-labelledby="electronics-title">
+      <section id="electronics" className="studio-page electronics-page" aria-labelledby="electronics-title" data-panorama-section="electronics">
         <div className="section-copy">
           <p className="studio-kicker">Page 03 / Electronics</p>
           <h2 id="electronics-title">Introduce intelligence only where autonomy needs it.</h2>
@@ -426,7 +503,7 @@ const Studio = () => {
         </div>
       </section>
 
-      <section id="simulation" className="studio-page simulation-page" aria-labelledby="simulation-title">
+      <section id="simulation" className="studio-page simulation-page" aria-labelledby="simulation-title" data-panorama-section="simulation">
         <div className="section-copy">
           <p className="studio-kicker">Page 04 / Simulated World</p>
           <h2 id="simulation-title">Test the plant pot against changing real-world conditions.</h2>
