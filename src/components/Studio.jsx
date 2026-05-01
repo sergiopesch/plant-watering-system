@@ -49,108 +49,143 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function interpolate(start, end, amount) {
+  return start + (end - start) * amount;
+}
+
+function smoothstep(value) {
+  return value * value * (3 - 2 * value);
+}
+
 function formatLiters(value) {
   return `${value.toFixed(1)} L`;
 }
 
-function usePointerField() {
+const cssVars = {
+  glowX: '--glow-x',
+  glowY: '--glow-y',
+  panoramaDriftX: '--panorama-drift-x',
+  panoramaDriftY: '--panorama-drift-y',
+  panoramaLightX: '--panorama-light-x',
+  panoramaRotate: '--panorama-rotate',
+  panoramaScale: '--panorama-scale',
+  pointerX: '--pointer-x',
+  pointerY: '--pointer-y',
+  scrollProgress: '--scroll-progress',
+  sectionCopyY: '--section-copy-y',
+};
+
+const panoramaCameraStops = [
+  { x: 82, y: -2.6, scale: 1.015, rotate: -0.9, light: -56, copy: -2.4 },
+  { x: 32, y: -1.6, scale: 1.04, rotate: 0.25, light: -18, copy: -0.8 },
+  { x: -12, y: -0.8, scale: 1.065, rotate: 0.75, light: 20, copy: 0.45 },
+  { x: -58, y: -1.35, scale: 1.075, rotate: -0.35, light: 54, copy: 1.35 },
+  { x: -82, y: -2.4, scale: 1.045, rotate: -0.95, light: 32, copy: 2.2 },
+];
+
+function buildPanoramaFrame(journey, pointerY) {
+  const cameraPosition = journey * (panoramaCameraStops.length - 1);
+  const cameraIndex = Math.min(Math.floor(cameraPosition), panoramaCameraStops.length - 2);
+  const easedLocalJourney = smoothstep(cameraPosition - cameraIndex);
+  const currentStop = panoramaCameraStops[cameraIndex];
+  const nextStop = panoramaCameraStops[cameraIndex + 1];
+
+  return {
+    [cssVars.scrollProgress]: journey.toFixed(4),
+    [cssVars.panoramaDriftX]: `${interpolate(currentStop.x, nextStop.x, easedLocalJourney).toFixed(2)}vw`,
+    [cssVars.panoramaDriftY]: `${interpolate(currentStop.y, nextStop.y, easedLocalJourney).toFixed(2)}vh`,
+    [cssVars.panoramaRotate]: `${interpolate(currentStop.rotate, nextStop.rotate, easedLocalJourney).toFixed(2)}deg`,
+    [cssVars.panoramaScale]: interpolate(currentStop.scale, nextStop.scale, easedLocalJourney).toFixed(4),
+    [cssVars.panoramaLightX]: `${interpolate(currentStop.light, nextStop.light, easedLocalJourney).toFixed(2)}vw`,
+    [cssVars.sectionCopyY]: `${(interpolate(currentStop.copy, nextStop.copy, easedLocalJourney) + pointerY * 0.22).toFixed(2)}vh`,
+  };
+}
+
+function setCachedStyleVar(node, cache, name, value) {
+  if (cache[name] === value) return;
+  node.style.setProperty(name, value);
+  cache[name] = value;
+}
+
+function usePanoramaMotion() {
   const shellRef = useRef(null);
   const target = useRef({ x: 0, y: 0 });
-  const current = useRef({ x: 0, y: 0 });
-  const sectionProgress = useRef(new Map());
+  const rootStyle = useRef({});
 
   useEffect(() => {
     const element = shellRef.current;
     if (!element) return undefined;
+    const prefersReducedMotion = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return undefined;
 
-    let frameId;
-    const panoramaSections = Array.from(element.querySelectorAll('[data-panorama-section]'));
-    const panoramaMotion = {
-      hero: {
-        x: 22, xMove: 58, y: 51, yMove: 7, shiftX: -19, shiftMove: 38,
-        shiftY: -1.2, shiftYMove: 2.4, tilt: -7.5, tiltMove: 15,
-        light: -34, lightMove: 76, copyMove: -5, opacityLoss: 0.28,
-      },
-      cad: {
-        x: 78, xMove: -46, y: 55, yMove: -5, shiftX: 14, shiftMove: -28,
-        shiftY: -0.5, shiftYMove: 1.4, tilt: 5.5, tiltMove: -11,
-        light: 38, lightMove: -76, copyMove: -1.6, opacityLoss: 0,
-      },
-      electronics: {
-        x: 24, xMove: 56, y: 48, yMove: 8, shiftX: -16, shiftMove: 32,
-        shiftY: -1.2, shiftYMove: 2, tilt: -6, tiltMove: 12,
-        light: -42, lightMove: 84, copyMove: -2.4, opacityLoss: 0,
-      },
-      simulation: {
-        x: 74, xMove: -52, y: 52, yMove: 6, shiftX: 13, shiftMove: -34,
-        shiftY: -0.7, shiftYMove: 1.8, tilt: 6.5, tiltMove: -14,
-        light: 40, lightMove: -84, copyMove: -2, opacityLoss: 0,
-      },
+    let frameId = 0;
+    let scrollDirty = true;
+    let pointerDirty = true;
+
+    const scheduleMotionFrame = () => {
+      if (frameId) return;
+      frameId = requestAnimationFrame(updateMotion);
     };
 
     const setTarget = (clientX, clientY) => {
       const rect = element.getBoundingClientRect();
       target.current.x = ((clientX - rect.left) / rect.width - 0.5) * 2;
       target.current.y = ((clientY - rect.top) / rect.height - 0.5) * 2;
+      pointerDirty = true;
+      scheduleMotionFrame();
     };
+
+    function updateMotion() {
+      frameId = 0;
+      const pointerX = target.current.x;
+      const pointerY = target.current.y;
+      const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      const journey = clamp(window.scrollY / scrollable, 0, 1);
+      const shouldWritePointer = pointerDirty;
+
+      if (scrollDirty) {
+        const frame = buildPanoramaFrame(journey, pointerY);
+        Object.entries(frame).forEach(([name, value]) => {
+          setCachedStyleVar(element, rootStyle.current, name, value);
+        });
+      }
+
+      if (shouldWritePointer || scrollDirty) {
+        setCachedStyleVar(element, rootStyle.current, cssVars.pointerX, pointerX.toFixed(4));
+        setCachedStyleVar(element, rootStyle.current, cssVars.pointerY, pointerY.toFixed(4));
+        setCachedStyleVar(element, rootStyle.current, cssVars.glowX, `${(50 + pointerX * 8).toFixed(2)}%`);
+        setCachedStyleVar(element, rootStyle.current, cssVars.glowY, `${(50 + pointerY * 6).toFixed(2)}%`);
+      }
+
+      scrollDirty = false;
+      pointerDirty = false;
+    }
 
     const handlePointerMove = (event) => setTarget(event.clientX, event.clientY);
     const handlePointerLeave = () => {
       target.current.x = 0;
       target.current.y = 0;
+      pointerDirty = true;
+      scheduleMotionFrame();
     };
 
-    const updateScrollJourney = () => {
-      panoramaSections.forEach((section) => {
-        const rect = section.getBoundingClientRect();
-        const isHero = section.dataset.panoramaSection === 'hero';
-        const rawProgress = isHero
-          ? -rect.top / Math.max(rect.height - window.innerHeight, window.innerHeight * 0.18)
-          : (window.innerHeight - rect.top) / Math.max(window.innerHeight + rect.height, 1);
-        sectionProgress.current.set(section, clamp(rawProgress, 0, 1));
-      });
-    };
-
-    const animate = () => {
-      current.current.x += (target.current.x - current.current.x) * 0.08;
-      current.current.y += (target.current.y - current.current.y) * 0.08;
-
-      element.style.setProperty('--pointer-x', current.current.x.toFixed(4));
-      element.style.setProperty('--pointer-y', current.current.y.toFixed(4));
-      element.style.setProperty('--glow-x', `${(50 + current.current.x * 8).toFixed(2)}%`);
-      element.style.setProperty('--glow-y', `${(50 + current.current.y * 6).toFixed(2)}%`);
-
-      panoramaSections.forEach((section) => {
-        const progress = sectionProgress.current.get(section) ?? 0;
-        const easedJourney = progress * progress * (3 - 2 * progress);
-        const motion = panoramaMotion[section.dataset.panoramaSection] ?? panoramaMotion.hero;
-        section.style.setProperty('--panorama-progress', easedJourney.toFixed(4));
-        section.style.setProperty('--panorama-x', `${(motion.x + easedJourney * motion.xMove + current.current.x * 3.2).toFixed(2)}%`);
-        section.style.setProperty('--panorama-y', `${(motion.y + easedJourney * motion.yMove - current.current.y * 2.4).toFixed(2)}%`);
-        section.style.setProperty('--panorama-shift-x', `${(motion.shiftX + easedJourney * motion.shiftMove + current.current.x * 3.4).toFixed(2)}vw`);
-        section.style.setProperty('--panorama-shift-y', `${(motion.shiftY + easedJourney * motion.shiftYMove - current.current.y * 1.2).toFixed(2)}vh`);
-        section.style.setProperty('--panorama-tilt', `${(motion.tilt + easedJourney * motion.tiltMove + current.current.x * 1.2).toFixed(2)}deg`);
-        section.style.setProperty('--panorama-scale', (1.08 + easedJourney * 0.08).toFixed(4));
-        section.style.setProperty('--panorama-light-x', `${(motion.light + easedJourney * motion.lightMove + current.current.x * 5).toFixed(2)}vw`);
-        section.style.setProperty('--section-copy-y', `${(motion.copyMove * easedJourney + current.current.y * 0.35).toFixed(2)}vh`);
-        section.style.setProperty('--section-copy-opacity', (1 - easedJourney * motion.opacityLoss).toFixed(4));
-      });
-
-      frameId = requestAnimationFrame(animate);
+    const markScrollDirty = () => {
+      scrollDirty = true;
+      scheduleMotionFrame();
     };
 
     element.addEventListener('pointermove', handlePointerMove);
     element.addEventListener('pointerleave', handlePointerLeave);
-    window.addEventListener('scroll', updateScrollJourney, { passive: true });
-    window.addEventListener('resize', updateScrollJourney);
-    updateScrollJourney();
-    animate();
+    window.addEventListener('scroll', markScrollDirty, { passive: true });
+    window.addEventListener('resize', markScrollDirty);
+    markScrollDirty();
 
     return () => {
       element.removeEventListener('pointermove', handlePointerMove);
       element.removeEventListener('pointerleave', handlePointerLeave);
-      window.removeEventListener('scroll', updateScrollJourney);
-      window.removeEventListener('resize', updateScrollJourney);
+      window.removeEventListener('scroll', markScrollDirty);
+      window.removeEventListener('resize', markScrollDirty);
       cancelAnimationFrame(frameId);
     };
   }, []);
@@ -308,39 +343,136 @@ const ThreeStage = ({ variant, diameter, height, reservoir, materialColor, light
 
     const resize = () => {
       const { width, height: boxHeight } = mount.getBoundingClientRect();
+      if (width === 0 || boxHeight === 0) return;
       renderer.setSize(width, boxHeight, false);
       camera.aspect = width / Math.max(boxHeight, 1);
       camera.updateProjectionMatrix();
     };
 
-    let frameId;
+    let frameId = 0;
+    let isVisible = false;
+    let resizeObserver;
+    let visibilityObserver;
     const clock = new Clock();
-    const animate = () => {
+
+    const renderFrame = () => {
       const elapsed = clock.getElapsedTime();
       group.rotation.y = elapsed * (variant === 'cad' ? 0.32 : 0.18);
       group.rotation.x = Math.sin(elapsed * 0.58) * 0.035;
       group.position.y = variant === 'simulation' ? 0.2 + Math.sin(elapsed * 0.8) * 0.04 : 0.32;
       renderer.render(scene, camera);
+    };
+
+    const animate = () => {
+      frameId = 0;
+      if (!isVisible) return;
+      renderFrame();
       frameId = requestAnimationFrame(animate);
     };
 
+    const startAnimation = () => {
+      if (frameId) return;
+      isVisible = true;
+      frameId = requestAnimationFrame(animate);
+    };
+
+    const stopAnimation = () => {
+      isVisible = false;
+      if (!frameId) return;
+      cancelAnimationFrame(frameId);
+      frameId = 0;
+    };
+
     resize();
-    window.addEventListener('resize', resize);
-    animate();
+    renderFrame();
+
+    if ('ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(() => {
+        resize();
+        renderFrame();
+      });
+      resizeObserver.observe(mount);
+    } else {
+      window.addEventListener('resize', resize);
+    }
+
+    if ('IntersectionObserver' in window) {
+      visibilityObserver = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          resize();
+          startAnimation();
+        } else {
+          stopAnimation();
+        }
+      }, { rootMargin: '180px 0px', threshold: 0.04 });
+      visibilityObserver.observe(mount);
+    } else {
+      startAnimation();
+    }
 
     return () => {
       window.removeEventListener('resize', resize);
+      resizeObserver?.disconnect();
+      visibilityObserver?.disconnect();
       cancelAnimationFrame(frameId);
+      scene.traverse((object) => {
+        object.geometry?.dispose();
+        if (Array.isArray(object.material)) {
+          object.material.forEach((material) => material.dispose());
+        } else {
+          object.material?.dispose();
+        }
+      });
       renderer.dispose();
-      mount.removeChild(renderer.domElement);
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
+      }
     };
   }, [diameter, height, humidity, light, materialColor, reservoir, variant]);
 
   return <div ref={mountRef} className="three-stage" aria-hidden="true" />;
 };
 
+const RangeControl = ({ label, min, max, step, value, onChange, valueLabel }) => (
+  <label>
+    {label}
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={(event) => onChange(Number(event.target.value))}
+    />
+    <span>{valueLabel ?? value}</span>
+  </label>
+);
+
+const MetricCard = ({ label, value }) => (
+  <article>
+    <span>{label}</span>
+    <strong>{value}</strong>
+  </article>
+);
+
+const SegmentedOptions = ({ options, selectedId, onSelect, className = '' }) => (
+  <div className={`segmented-options ${className}`.trim()}>
+    {options.map((option) => (
+      <button
+        key={option.id}
+        type="button"
+        aria-pressed={option.id === selectedId}
+        className={option.id === selectedId ? 'is-active' : ''}
+        onClick={() => onSelect(option.id)}
+      >
+        {option.label}
+      </button>
+    ))}
+  </div>
+);
+
 const Studio = () => {
-  const shellRef = usePointerField();
+  const shellRef = usePanoramaMotion();
   const [diameter, setDiameter] = useState(180);
   const [height, setHeight] = useState(215);
   const [reservoir, setReservoir] = useState(0.9);
@@ -350,8 +482,8 @@ const Studio = () => {
   const [plantId, setPlantId] = useState('aroid');
   const [materialId, setMaterialId] = useState('petg');
 
-  const selectedPlant = plantProfiles.find((plant) => plant.id === plantId);
-  const selectedMaterial = materials.find((material) => material.id === materialId);
+  const selectedPlant = plantProfiles.find((plant) => plant.id === plantId) ?? plantProfiles[0];
+  const selectedMaterial = materials.find((material) => material.id === materialId) ?? materials[0];
 
   const model = useMemo(() => {
     const radiusMm = diameter / 2;
@@ -376,6 +508,12 @@ const Studio = () => {
 
   return (
     <main ref={shellRef} className="studio-shell">
+      <div className="studio-panorama" aria-hidden="true">
+        <div className="studio-panorama__image" />
+        <div className="studio-panorama__haze" />
+        <div className="studio-panorama__light" />
+        <div className="studio-panorama__glass" />
+      </div>
       <section
         id="origin"
         className="studio-page hero-page"
@@ -384,11 +522,6 @@ const Studio = () => {
         data-panorama-section="hero"
       >
         <div className="hero-viewport">
-          <div className="hero-panorama" aria-hidden="true">
-            <div className="hero-panorama__image" />
-            <div className="hero-panorama__depth" />
-            <div className="hero-panorama__veil" />
-          </div>
           <div className="hero-content">
             <p className="studio-kicker">Design system v0.1</p>
             <h1 id="studio-title">Design, simulate, and build self-contained smart pots.</h1>
@@ -396,6 +529,20 @@ const Studio = () => {
               A digital workshop for moving from pot geometry to sensor strategy, watering intelligence,
               printable parts, and field-tested autonomy.
             </p>
+          </div>
+          <div className="hero-telemetry" aria-label="Current smart pot model snapshot">
+            <article>
+              <span>Water reserve</span>
+              <strong>{model.autonomyDays.toFixed(1)} d</strong>
+            </article>
+            <article>
+              <span>Pump rhythm</span>
+              <strong>{model.doseMl.toFixed(0)} ml</strong>
+            </article>
+            <article>
+              <span>Prototype path</span>
+              <strong>CAD to STL</strong>
+            </article>
           </div>
         </div>
       </section>
@@ -421,30 +568,34 @@ const Studio = () => {
             humidity={humidity}
           />
           <div className="control-surface">
-            <label>
-              Diameter
-              <input type="range" min="130" max="240" value={diameter} onChange={(event) => setDiameter(Number(event.target.value))} />
-              <span>{diameter} mm</span>
-            </label>
-            <label>
-              Body height
-              <input type="range" min="160" max="300" value={height} onChange={(event) => setHeight(Number(event.target.value))} />
-              <span>{height} mm</span>
-            </label>
-            <label>
-              Reservoir
-              <input type="range" min="0.4" max="1.8" step="0.1" value={reservoir} onChange={(event) => setReservoir(Number(event.target.value))} />
-              <span>{formatLiters(reservoir)}</span>
-            </label>
+            <RangeControl
+              label="Diameter"
+              min="130"
+              max="240"
+              value={diameter}
+              onChange={setDiameter}
+              valueLabel={`${diameter} mm`}
+            />
+            <RangeControl
+              label="Body height"
+              min="160"
+              max="300"
+              value={height}
+              onChange={setHeight}
+              valueLabel={`${height} mm`}
+            />
+            <RangeControl
+              label="Reservoir"
+              min="0.4"
+              max="1.8"
+              step="0.1"
+              value={reservoir}
+              onChange={setReservoir}
+              valueLabel={formatLiters(reservoir)}
+            />
             <div className="metric-grid">
-              <article>
-                <span>Soil volume</span>
-                <strong>{formatLiters(model.soilVolumeL)}</strong>
-              </article>
-              <article>
-                <span>Print estimate</span>
-                <strong>{model.printHours.toFixed(1)} h</strong>
-              </article>
+              <MetricCard label="Soil volume" value={formatLiters(model.soilVolumeL)} />
+              <MetricCard label="Print estimate" value={`${model.printHours.toFixed(1)} h`} />
             </div>
           </div>
         </div>
@@ -471,30 +622,13 @@ const Studio = () => {
             ))}
           </div>
           <div className="control-surface electronics-controls">
-            <div className="segmented-options">
-              {plantProfiles.map((plant) => (
-                <button
-                  key={plant.id}
-                  type="button"
-                  className={plant.id === plantId ? 'is-active' : ''}
-                  onClick={() => setPlantId(plant.id)}
-                >
-                  {plant.label}
-                </button>
-              ))}
-            </div>
-            <div className="segmented-options material-options">
-              {materials.map((material) => (
-                <button
-                  key={material.id}
-                  type="button"
-                  className={material.id === materialId ? 'is-active' : ''}
-                  onClick={() => setMaterialId(material.id)}
-                >
-                  {material.label}
-                </button>
-              ))}
-            </div>
+            <SegmentedOptions options={plantProfiles} selectedId={plantId} onSelect={setPlantId} />
+            <SegmentedOptions
+              options={materials}
+              selectedId={materialId}
+              onSelect={setMaterialId}
+              className="material-options"
+            />
             <div className="module-note">
               <span>{selectedMaterial.score}/100 material fit</span>
               <p>{selectedMaterial.note}</p>
@@ -524,38 +658,35 @@ const Studio = () => {
             humidity={humidity}
           />
           <div className="control-surface">
-            <label>
-              Temperature
-              <input type="range" min="15" max="33" value={ambientTemp} onChange={(event) => setAmbientTemp(Number(event.target.value))} />
-              <span>{ambientTemp} C</span>
-            </label>
-            <label>
-              Humidity
-              <input type="range" min="25" max="80" value={humidity} onChange={(event) => setHumidity(Number(event.target.value))} />
-              <span>{humidity}% RH</span>
-            </label>
-            <label>
-              Light
-              <input type="range" min="20" max="100" value={light} onChange={(event) => setLight(Number(event.target.value))} />
-              <span>{light}%</span>
-            </label>
+            <RangeControl
+              label="Temperature"
+              min="15"
+              max="33"
+              value={ambientTemp}
+              onChange={setAmbientTemp}
+              valueLabel={`${ambientTemp} C`}
+            />
+            <RangeControl
+              label="Humidity"
+              min="25"
+              max="80"
+              value={humidity}
+              onChange={setHumidity}
+              valueLabel={`${humidity}% RH`}
+            />
+            <RangeControl
+              label="Light"
+              min="20"
+              max="100"
+              value={light}
+              onChange={setLight}
+              valueLabel={`${light}%`}
+            />
             <div className="metric-grid">
-              <article>
-                <span>Daily water</span>
-                <strong>{model.dailyUseMl.toFixed(0)} ml</strong>
-              </article>
-              <article>
-                <span>Micro-dose</span>
-                <strong>{model.doseMl.toFixed(0)} ml</strong>
-              </article>
-              <article>
-                <span>Target moisture</span>
-                <strong>{model.targetMoisture}%</strong>
-              </article>
-              <article>
-                <span>Autonomy</span>
-                <strong>{model.autonomyDays.toFixed(1)} days</strong>
-              </article>
+              <MetricCard label="Daily water" value={`${model.dailyUseMl.toFixed(0)} ml`} />
+              <MetricCard label="Micro-dose" value={`${model.doseMl.toFixed(0)} ml`} />
+              <MetricCard label="Target moisture" value={`${model.targetMoisture}%`} />
+              <MetricCard label="Autonomy" value={`${model.autonomyDays.toFixed(1)} days`} />
             </div>
           </div>
         </div>

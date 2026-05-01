@@ -19,19 +19,20 @@ npm run security:audit
 Run the full local verification set for UI-facing changes:
 
 ```bash
-npm test
-npm run build
-npm run verify:ui
-npm run security:audit
+npm run verify
 ```
 
-## GitHub Dependabot
+`npm run verify` runs unit tests, the production build, browser UI verification, and the production dependency audit.
 
-GitHub Dependabot is the source of truth for repository-level dependency alerts. If GitHub reports an alert that local `npm audit` does not reproduce, inspect the alert directly:
+## Repository Automation
+
+GitHub Actions runs the same verification gate on pull requests and pushes to `main`. Dependabot is configured for npm and GitHub Actions updates.
+
+GitHub Dependabot remains the source of truth for repository-level dependency alerts. If GitHub reports an alert that local `npm audit` does not reproduce, inspect the alert directly:
 
 ```bash
 gh api -H 'Accept: application/vnd.github+json' \
   '/repos/sergiopesch/plant-watering-system/dependabot/alerts?state=open'
 ```
 
-As of the current dependency lockfile, local production audit reports 0 vulnerabilities and GitHub Dependabot reports 0 open alerts.
+As of the current dependency lockfile, local production audit reports 0 vulnerabilities.

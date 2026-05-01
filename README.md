@@ -1,8 +1,12 @@
-# Plant Watering System
+<h1 align="center">Self-Contained Smart Plant Pot Studio</h1>
 
-![Self-contained smart plant pot screenshot](docs/assets/self-contained-smart-pot-banner.jpg)
+<p align="center">
+  <img src="docs/assets/self-contained-smart-pot-banner.jpg" alt="Immersive smart-pot design studio with a panoramic autonomous garden showroom background" width="100%">
+</p>
 
-This project is evolving into a public, immersive digital product studio for self-contained, autonomous plant pots.
+<p align="center">
+  <strong>An immersive digital product studio for designing, simulating, and prototyping self-contained autonomous plant pots.</strong>
+</p>
 
 The intended workflow is:
 
@@ -25,8 +29,34 @@ It includes:
 - material and plant profile choices
 - Three.js CAD and simulation scenes
 - first-pass autonomy, soil volume, water demand, dose, and print-time estimates
+- a full-page 8K panoramic smart-pot showroom background with compositor-driven scroll motion
 
 This is not yet a real CAD kernel or physics engine. It is the foundation for those layers.
+
+## Visual System
+
+The current experience uses a single fixed panoramic background across the full page. Scroll and pointer motion update a bounded set of CSS custom properties on the root studio shell, while the heavy visual movement stays on compositor-friendly CSS transforms and animations.
+
+Production panorama assets live in `public/assets/`:
+
+- `smart-pot-garden-showroom-8k.avif`: 8192x4096 AVIF primary asset
+- `smart-pot-garden-showroom-8k.webp`: 8192x4096 WebP fallback
+
+The README header image is a browser screenshot captured from the running app:
+
+- `docs/assets/self-contained-smart-pot-banner.jpg`
+
+Refresh it after major visual changes with:
+
+```bash
+# terminal 1
+npm run dev
+
+# terminal 2
+npm run docs:banner
+```
+
+`docs:banner` captures the running app, so keep the dev server open in another terminal.
 
 ## Product Surface
 
@@ -75,10 +105,16 @@ Primary references:
 
 ## Development
 
+Use the pinned Node version:
+
+```bash
+nvm use
+```
+
 Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
 Run the local app:
@@ -93,6 +129,12 @@ Run tests:
 npm test
 ```
 
+Run the local quality gate:
+
+```bash
+npm run verify
+```
+
 Run browser UI verification:
 
 ```bash
@@ -102,11 +144,14 @@ npm run verify:ui
 Refresh the README banner screenshot after major visual changes:
 
 ```bash
-mkdir -p docs/assets
+# terminal 1
+npm run dev
+
+# terminal 2
 npm run docs:banner
 ```
 
-If your dev server is on a different port, pass it explicitly:
+If your dev server is on a different port, pass it explicitly. The banner capture also supports `BANNER_WIDTH`, `BANNER_HEIGHT`, `BANNER_QUALITY`, and `BANNER_PATH`.
 
 ```bash
 BANNER_URL=http://localhost:3003/ npm run docs:banner
@@ -124,7 +169,17 @@ Production dependency audit:
 npm run security:audit
 ```
 
-`verify:ui` starts a local Vite server, opens Chromium with Playwright, and checks desktop/mobile layouts for clipped sections, text overflow, missing CTA, incorrect favicon/title, and blank Three.js scenes. If your system does not expose Chromium at `/snap/bin/chromium`, install Playwright browsers or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
+`verify` runs tests, production build, browser UI verification, and a production dependency audit. `verify:ui` starts a local Vite server, opens Chromium with Playwright, and checks desktop/mobile layouts for clipped sections, text overflow, missing CTA, incorrect favicon/title, and blank Three.js scenes. If your system does not expose Chromium at `/snap/bin/chromium`, install Playwright browsers or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
+
+## DevOps
+
+CI is defined in `.github/workflows/ci.yml`. It installs dependencies with `npm ci`, installs the Chromium browser needed by Playwright, and runs:
+
+```bash
+npm run ci
+```
+
+Dependabot is configured in `.github/dependabot.yml` for npm packages and GitHub Actions.
 
 ## Next Increments
 

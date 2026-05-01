@@ -1,237 +1,257 @@
 .studio-shell {
   --glow-x: 50%;
   --glow-y: 50%;
-  --panorama-light-x: -34vw;
-  --panorama-progress: 0;
-  --panorama-scale: 1.08;
-  --panorama-shift-x: -19vw;
-  --panorama-shift-y: -1.2vh;
-  --panorama-tilt: -7.5deg;
-  --panorama-x: 22%;
-  --panorama-y: 51%;
+  --panorama-image: image-set(
+    "/assets/smart-pot-garden-showroom-8k.avif" type("image/avif"),
+    "/assets/smart-pot-garden-showroom-8k.webp" type("image/webp")
+  );
+  --panorama-drift-x: 82vw;
+  --panorama-drift-y: -2.6vh;
+  --panorama-light-x: -56vw;
+  --panorama-rotate: -0.9deg;
+  --panorama-scale: 1.015;
   --pointer-x: 0;
   --pointer-y: 0;
-  --section-copy-opacity: 1;
+  --scroll-progress: 0;
   --section-copy-y: 0vh;
-  background: #f4f6ef;
-  color: #17241c;
+  background: #07100c;
+  color: #f8fbf2;
   font-family: "Avenir Next", "Trebuchet MS", Verdana, sans-serif;
   min-height: 100vh;
   overflow-x: clip;
-  scroll-snap-type: y proximity;
+  position: relative;
   scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
   text-align: left;
+}
+
+.studio-panorama,
+.studio-panorama__image,
+.studio-panorama__haze,
+.studio-panorama__light,
+.studio-panorama__glass {
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+}
+
+.studio-panorama {
+  background: #07100c;
+  contain: strict;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.studio-panorama__image {
+  inset: -12vh -92vw;
+  overflow: hidden;
+  transform:
+    translate3d(
+      calc(var(--panorama-drift-x) + var(--pointer-x) * -4.8vw),
+      calc(var(--panorama-drift-y) + var(--pointer-y) * -2vh),
+      0
+    )
+    rotate(calc(var(--panorama-rotate) + var(--pointer-x) * 0.55deg))
+    scale(var(--panorama-scale));
+  transform-origin: center;
+  transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.studio-panorama__image::before {
+  animation: ambient-panorama 26s cubic-bezier(0.42, 0, 0.16, 1) infinite alternate;
+  background-image: var(--panorama-image);
+  background-position: center;
+  background-size: cover;
+  content: "";
+  filter: saturate(1.2) contrast(1.1) brightness(0.88);
+  inset: -2%;
+  position: absolute;
+  transform: translate3d(0, 0, 0) scale(1.015);
+  will-change: transform;
+}
+
+.studio-panorama__haze,
+.studio-panorama__light,
+.studio-panorama__glass {
+  overflow: hidden;
+}
+
+.studio-panorama__haze {
+  mix-blend-mode: screen;
+  opacity: 0.58;
+}
+
+.studio-panorama__haze::before,
+.studio-panorama__haze::after,
+.studio-panorama__light::before,
+.studio-panorama__light::after,
+.studio-panorama__glass::before,
+.studio-panorama__glass::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  will-change: opacity, transform;
+}
+
+.studio-panorama__haze::before {
+  animation: greenhouse-mist 18s ease-in-out infinite alternate;
+  background:
+    radial-gradient(ellipse at 26% 54%, rgba(207, 235, 176, 0.24), transparent 35%),
+    radial-gradient(ellipse at 72% 36%, rgba(106, 199, 223, 0.18), transparent 28%),
+    radial-gradient(ellipse at 50% 82%, rgba(255, 255, 255, 0.16), transparent 36%);
+  inset: -18%;
+  opacity: 0.62;
+  transform: translate3d(calc(var(--pointer-x) * -1.3vw), calc(var(--pointer-y) * 0.8vh), 0);
+}
+
+.studio-panorama__haze::after {
+  animation: reservoir-glints 11s ease-in-out infinite alternate;
+  background:
+    radial-gradient(ellipse at 16% 82%, rgba(106, 199, 223, 0.28), transparent 16%),
+    radial-gradient(ellipse at 62% 78%, rgba(255, 255, 255, 0.2), transparent 20%),
+    radial-gradient(ellipse at 84% 72%, rgba(106, 199, 223, 0.18), transparent 17%);
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0.48;
+}
+
+.studio-panorama__light {
+  mix-blend-mode: screen;
+  opacity: 0.78;
+}
+
+.studio-panorama__light::before {
+  animation: grow-rig-sweep 13s ease-in-out infinite alternate;
+  background: linear-gradient(105deg, transparent 0 34%, rgba(208, 241, 169, 0.28) 45%, rgba(106, 199, 223, 0.16) 52%, transparent 66%);
+  inset: -12% -40%;
+  transform: translate3d(calc(var(--panorama-light-x) + var(--pointer-x) * 6vw), 0, 0) skewX(-8deg);
+  transition: transform 300ms linear;
+}
+
+.studio-panorama__light::after {
+  animation: rig-lines 19s linear infinite;
+  background: repeating-linear-gradient(93deg, transparent 0 8.5vw, rgba(255, 255, 255, 0.07) 8.58vw 8.66vw, transparent 8.85vw 17vw);
+  inset: -5% -18%;
+  opacity: 0.64;
+  transform: translate3d(0, 0, 0);
+}
+
+.studio-panorama__glass {
+  background:
+    linear-gradient(90deg, rgba(2, 7, 5, 0.74) 0%, rgba(4, 12, 8, 0.28) 28%, rgba(5, 13, 9, 0.1) 62%, rgba(2, 7, 5, 0.66) 100%),
+    linear-gradient(180deg, rgba(2, 7, 5, 0.1) 0%, transparent 34%, rgba(2, 7, 5, 0.5) 100%),
+    radial-gradient(ellipse at 50% 103%, rgba(2, 7, 5, 0.72), transparent 52%);
+  mix-blend-mode: normal;
+  opacity: 0.96;
+}
+
+.studio-panorama__glass::before {
+  animation: prismatic-veil 20s ease-in-out infinite alternate;
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.11) 42%, transparent 58%);
+  inset: -40%;
+  mix-blend-mode: screen;
+  opacity: 0.72;
+  transform: translate3d(-16%, 0, 0);
+}
+
+.studio-panorama__glass::after {
+  background: radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(106, 199, 223, 0.16), transparent 28%);
+  inset: -8%;
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  transform: translate3d(calc(var(--pointer-x) * 1.5vw), calc(var(--pointer-y) * 1vh), 0);
+  transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .studio-page {
   align-content: center;
   display: grid;
-  min-height: 100vh;
-  overflow: visible;
-  padding: clamp(28px, 4vw, 48px) clamp(14px, 4vw, 64px);
+  min-height: 100svh;
+  overflow: clip;
+  padding: clamp(28px, 4vw, 52px) clamp(14px, 4vw, 64px);
   position: relative;
   scroll-snap-align: start;
+  z-index: 1;
 }
 
-.hero-page {
-  align-content: start;
-  background: #07100c;
-  color: #ffffff;
-  grid-template-columns: minmax(0, 1fr);
-  isolation: isolate;
-  min-height: 128svh;
-  overflow: visible;
-  padding: 0;
-}
-
-.cad-page::before,
-.cad-page::after,
-.electronics-page::before,
-.electronics-page::after,
-.simulation-page::before,
-.simulation-page::after,
-.cta-page::before,
-.cta-page::after {
+.studio-page::before {
+  background: linear-gradient(90deg, rgba(4, 10, 7, 0.54), rgba(4, 10, 7, 0.14) 48%, rgba(4, 10, 7, 0.42));
   content: "";
   inset: 0;
   pointer-events: none;
   position: absolute;
-}
-
-[data-panorama-section] {
-  --section-copy-opacity: 1;
-  --section-copy-y: 0vh;
-  isolation: isolate;
-}
-
-.cad-page,
-.electronics-page,
-.simulation-page {
-  overflow: hidden;
-}
-
-.cad-page::before,
-.electronics-page::before,
-.simulation-page::before {
-  animation: panorama-breathe 34s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate;
-  background-position: center, center, var(--panorama-x) var(--panorama-y);
-  background-size: 100% 100%, 100% 100%, max(168vw, 136vh) auto;
-  filter: saturate(1.08) contrast(1.04);
-  inset: -10vmax -16vmax;
-  transform: translate3d(var(--panorama-shift-x), var(--panorama-shift-y), 0) rotateY(var(--panorama-tilt)) scale(var(--panorama-scale));
-  transform-origin: center;
   z-index: 0;
 }
 
-.cad-page::before {
+.cad-page::before,
+.simulation-page::before {
   background:
-    linear-gradient(90deg, rgba(240, 246, 232, 0.96) 0%, rgba(237, 245, 230, 0.78) 34%, rgba(239, 246, 233, 0.5) 70%, rgba(229, 237, 222, 0.92) 100%),
-    linear-gradient(180deg, rgba(246, 250, 242, 0.5), rgba(219, 230, 214, 0.78)),
-    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
+    linear-gradient(90deg, rgba(237, 245, 231, 0.7) 0%, rgba(230, 240, 228, 0.42) 38%, rgba(222, 237, 232, 0.22) 72%, rgba(229, 238, 224, 0.58) 100%),
+    linear-gradient(180deg, rgba(250, 252, 245, 0.12), rgba(218, 229, 218, 0.34));
 }
 
 .electronics-page::before {
   background:
-    linear-gradient(90deg, rgba(6, 12, 9, 0.94) 0%, rgba(15, 27, 20, 0.72) 36%, rgba(18, 33, 25, 0.5) 72%, rgba(6, 12, 9, 0.9) 100%),
-    linear-gradient(180deg, rgba(4, 8, 6, 0.28), rgba(4, 8, 6, 0.78)),
-    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
+    linear-gradient(90deg, rgba(2, 8, 5, 0.9) 0%, rgba(7, 17, 11, 0.66) 38%, rgba(10, 24, 18, 0.38) 72%, rgba(2, 8, 5, 0.84) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.48));
 }
 
-.simulation-page::before {
+.cta-page::before {
   background:
-    linear-gradient(90deg, rgba(231, 242, 236, 0.96) 0%, rgba(218, 236, 229, 0.72) 34%, rgba(211, 232, 231, 0.46) 70%, rgba(224, 235, 223, 0.88) 100%),
-    linear-gradient(180deg, rgba(239, 249, 244, 0.48), rgba(206, 225, 217, 0.78)),
-    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
+    radial-gradient(ellipse at 26% 76%, rgba(198, 228, 165, 0.2), transparent 34%),
+    linear-gradient(90deg, rgba(2, 8, 5, 0.82), rgba(5, 14, 9, 0.42) 48%, rgba(2, 8, 5, 0.74));
 }
 
-.cad-page::after,
-.electronics-page::after,
-.simulation-page::after {
-  background-position: var(--panorama-light-x) 50%, 0 0, var(--glow-x) var(--glow-y);
-  inset: 0;
-  opacity: 0.72;
-  transform: translate3d(0, calc(var(--panorama-progress) * -2vh), 0);
-  z-index: 1;
-}
-
-.cad-page::after {
-  background:
-    linear-gradient(104deg, transparent 0%, rgba(92, 130, 97, 0.18) 46%, rgba(92, 190, 205, 0.1) 54%, transparent 68%),
-    linear-gradient(90deg, rgba(35, 55, 43, 0.05) 1px, transparent 1px),
-    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(122, 168, 107, 0.18), transparent 30%);
-  background-size: 150% 100%, 36px 36px, 110% 110%;
-  mix-blend-mode: multiply;
-}
-
-.electronics-page::after {
-  background:
-    linear-gradient(104deg, transparent 0%, rgba(198, 228, 165, 0.2) 45%, rgba(101, 197, 211, 0.12) 55%, transparent 70%),
-    linear-gradient(90deg, rgba(198, 228, 165, 0.11) 1px, transparent 1px),
-    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(198, 228, 165, 0.18), transparent 28%);
-  background-size: 150% 100%, 46px 46px, 110% 110%;
-  mix-blend-mode: screen;
-}
-
-.simulation-page::after {
-  background:
-    linear-gradient(104deg, transparent 0%, rgba(103, 183, 196, 0.18) 44%, rgba(198, 228, 165, 0.13) 56%, transparent 70%),
-    linear-gradient(90deg, rgba(36, 72, 67, 0.05) 1px, transparent 1px),
-    radial-gradient(ellipse at var(--glow-x) var(--glow-y), rgba(96, 162, 151, 0.18), transparent 30%);
-  background-size: 150% 100%, 40px 40px, 110% 110%;
-  mix-blend-mode: multiply;
-}
-
-.cad-page::before,
-.electronics-page::before,
-.simulation-page::before {
-  background-position: center, center, var(--panorama-x) var(--panorama-y);
-  background-size: 100% 100%, 100% 100%, max(168vw, 136vh) auto;
-}
-
-.cad-page::after,
-.electronics-page::after,
-.simulation-page::after {
-  background-position: var(--panorama-light-x) 50%, 0 0, var(--glow-x) var(--glow-y);
+.hero-page {
+  align-content: start;
+  color: #ffffff;
+  min-height: 128svh;
+  padding: 0;
 }
 
 .hero-viewport {
   align-items: center;
   display: grid;
   min-height: 100svh;
-  overflow: hidden;
-  padding: clamp(28px, 4vw, 48px) clamp(14px, 4vw, 64px);
+  padding: clamp(28px, 4vw, 52px) clamp(14px, 4vw, 64px);
   position: sticky;
   top: 0;
 }
 
-.hero-panorama,
-.hero-panorama__image,
-.hero-panorama__depth,
-.hero-panorama__veil {
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
+.hero-content,
+.section-copy,
+.immersive-grid,
+.electronics-layout,
+.cta-panel {
+  position: relative;
+  z-index: 2;
 }
 
-.hero-panorama {
-  inset: -9vmax -16vmax;
-  overflow: hidden;
-  perspective: 1300px;
-  z-index: 0;
-}
-
-.hero-panorama__image {
-  animation: panorama-breathe 32s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate;
-  background:
-    linear-gradient(90deg, rgba(4, 9, 7, 0.92) 0%, rgba(8, 17, 12, 0.48) 34%, rgba(8, 17, 12, 0.18) 68%, rgba(4, 9, 7, 0.78) 100%),
-    linear-gradient(180deg, rgba(5, 9, 7, 0.1), rgba(5, 9, 7, 0.46)),
-    url("https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2200&q=88");
-  background-position: center, center, var(--panorama-x) var(--panorama-y);
-  background-size: 100% 100%, 100% 100%, max(176vw, 148vh) auto;
-  filter: saturate(1.08) contrast(1.06) brightness(0.78);
-  transform: translate3d(var(--panorama-shift-x), var(--panorama-shift-y), 0) rotateY(var(--panorama-tilt)) scale(var(--panorama-scale));
-  transform-origin: center;
-}
-
-.hero-panorama__depth {
-  background:
-    linear-gradient(105deg, rgba(190, 227, 151, 0) 0 36%, rgba(190, 227, 151, 0.18) 46%, rgba(83, 190, 205, 0.1) 52%, rgba(190, 227, 151, 0) 64%),
-    repeating-linear-gradient(93deg, rgba(255, 255, 255, 0) 0 9vw, rgba(255, 255, 255, 0.055) 9.08vw 9.14vw, rgba(255, 255, 255, 0) 9.26vw 18vw);
-  mix-blend-mode: screen;
-  opacity: 0.56;
-  transform: translate3d(var(--panorama-light-x), 0, 0) skewX(-8deg);
-}
-
-.hero-panorama__veil {
-  background:
-    linear-gradient(180deg, rgba(4, 9, 7, 0.12) 0%, rgba(4, 9, 7, 0) 38%, rgba(4, 9, 7, 0.42) 100%),
-    linear-gradient(96deg, transparent 0%, rgba(210, 239, 158, 0.22) 44%, rgba(83, 190, 205, 0.1) 52%, transparent 66%),
-    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.08) 42%, transparent 58%);
-  background-size: 100% 100%, 120% 120%, 240% 240%;
-  background-position: center, var(--glow-x) var(--glow-y), center;
-  mix-blend-mode: screen;
-  opacity: 0.9;
+.hero-content,
+.section-copy {
+  transform: translate3d(0, var(--section-copy-y), 0);
+  transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
 }
 
 .hero-content {
-  max-width: min(880px, 72vw);
-  opacity: var(--section-copy-opacity);
-  position: relative;
-  transform: translate3d(0, var(--section-copy-y), 0);
-  z-index: 3;
+  max-width: min(900px, 72vw);
 }
 
-.hero-content::before {
-  animation: grow-light-scan 16s ease-in-out infinite alternate;
-  background: linear-gradient(90deg, transparent, rgba(198, 228, 165, 0.16), transparent);
+.hero-content::before,
+.hero-telemetry::before {
+  animation: grow-light-scan 14s ease-in-out infinite alternate;
+  background: linear-gradient(90deg, transparent, rgba(198, 228, 165, 0.28), rgba(106, 199, 223, 0.16), transparent);
   content: "";
   height: 1px;
   left: 0;
-  max-width: 620px;
   opacity: 0.9;
   position: absolute;
   top: -22px;
-  width: 72%;
+  transform-origin: left center;
+  width: min(620px, 72%);
+  will-change: opacity, transform;
 }
 
 .studio-kicker {
@@ -244,81 +264,104 @@
 }
 
 .hero-content h1,
-.section-copy h2 {
+.section-copy h2,
+.cta-panel h2 {
   letter-spacing: 0;
   line-height: 0.98;
   margin: 0;
 }
 
 .hero-content h1 {
-  font-size: clamp(3rem, 5.8vw, 6.1rem);
-  max-width: 960px;
+  font-size: clamp(3rem, 5.8vw, 6.2rem);
+  max-width: 980px;
 }
 
 .hero-content p,
-.section-copy p {
+.section-copy p,
+.cta-panel p {
   font-size: 1.05rem;
   line-height: 1.58;
   margin: 22px 0 0;
   max-width: 660px;
 }
 
-.control-surface,
-.circuit-board article,
-.module-note {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(24, 34, 28, 0.12);
+.hero-telemetry {
+  backdrop-filter: blur(24px) saturate(1.18);
+  background:
+    linear-gradient(100deg, rgba(255, 255, 255, 0.12), rgba(198, 228, 165, 0.04)),
+    rgba(3, 10, 7, 0.58);
+  border: 1px solid rgba(214, 239, 182, 0.24);
   border-radius: 8px;
-  color: #1d2a22;
+  bottom: clamp(24px, 7vh, 78px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  position: absolute;
+  right: clamp(14px, 4vw, 64px);
+  transform: translate3d(0, calc(var(--section-copy-y) * -0.28), 0);
+  transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  width: min(620px, calc(100% - 28px));
+  z-index: 3;
 }
 
+.hero-telemetry::before {
+  inset: 0 auto auto 0;
+  top: 0;
+  width: 76%;
+}
+
+.hero-telemetry article {
+  display: grid;
+  gap: 6px;
+  min-height: 76px;
+  padding: 16px 18px;
+}
+
+.hero-telemetry article + article {
+  border-left: 1px solid rgba(214, 239, 182, 0.16);
+}
+
+.hero-telemetry span,
 .metric-grid span,
 .module-note span {
-  color: #667063;
-  font-size: 0.75rem;
+  color: rgba(229, 246, 218, 0.68);
+  font-size: 0.7rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
-.cad-page {
-  background: #eaf1e5;
-}
-
-.electronics-page {
-  background: #101d16;
+.hero-telemetry strong {
+  align-self: end;
   color: #ffffff;
-}
-
-.simulation-page {
-  background: #ddeae4;
+  font-size: clamp(1rem, 1.5vw, 1.42rem);
+  line-height: 1;
 }
 
 .section-copy {
   margin: 0 auto 24px;
   max-width: 1180px;
-  opacity: var(--section-copy-opacity);
-  position: relative;
-  transform: translate3d(0, var(--section-copy-y), 0);
   width: 100%;
-  z-index: 2;
 }
 
-.cad-page .studio-kicker {
-  color: #527b57;
+.section-copy h2 {
+  font-size: clamp(2.2rem, 4.2vw, 4.65rem);
+  max-width: 920px;
 }
 
+.cad-page .studio-kicker,
 .simulation-page .studio-kicker {
-  color: #4c8278;
+  color: #426f53;
+}
+
+.cad-page .section-copy,
+.simulation-page .section-copy {
+  color: #122119;
 }
 
 .cad-page .section-copy p,
 .simulation-page .section-copy p {
-  color: rgba(23, 36, 28, 0.78);
-}
-
-.section-copy h2 {
-  font-size: clamp(2.2rem, 4.2vw, 4.6rem);
-  max-width: 900px;
+  color: rgba(18, 33, 25, 0.78);
 }
 
 .electronics-page .section-copy p {
@@ -332,57 +375,106 @@
   grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
   margin: 0 auto;
   max-width: 1180px;
-  position: relative;
   width: 100%;
-  z-index: 2;
 }
 
-.cad-page .control-surface,
-.cad-page .three-stage,
-.electronics-page .control-surface,
-.electronics-page .circuit-board article,
-.simulation-page .control-surface,
-.simulation-page .three-stage {
-  backdrop-filter: blur(18px);
-  box-shadow: 0 24px 70px rgba(15, 25, 18, 0.1);
+.electronics-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
 }
 
-.cad-page .three-stage {
+.control-surface,
+.circuit-board article,
+.module-note,
+.three-stage {
+  backdrop-filter: blur(22px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(3, 12, 8, 0.18);
+  color: #1d2a22;
+}
+
+.control-surface,
+.circuit-board article,
+.module-note {
   background:
-    linear-gradient(90deg, rgba(39, 54, 46, 0.07) 1px, transparent 1px),
-    linear-gradient(rgba(39, 54, 46, 0.07) 1px, transparent 1px),
-    rgba(255, 255, 255, 0.58);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(240, 248, 236, 0.68)),
+    rgba(255, 255, 255, 0.74);
 }
 
 .three-stage {
   background:
-    linear-gradient(90deg, rgba(39, 54, 46, 0.07) 1px, transparent 1px),
-    linear-gradient(rgba(39, 54, 46, 0.07) 1px, transparent 1px),
-    rgba(255, 255, 255, 0.68);
+    linear-gradient(90deg, rgba(39, 54, 46, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(39, 54, 46, 0.08) 1px, transparent 1px),
+    rgba(244, 250, 240, 0.64);
   background-size: 30px 30px;
-  border: 1px solid rgba(24, 34, 28, 0.12);
-  border-radius: 8px;
-  min-height: clamp(360px, 48vh, 560px);
+  height: clamp(360px, 48vh, 560px);
   overflow: hidden;
+  position: relative;
+  transform: translateZ(0);
 }
 
 .simulation-grid .three-stage {
   background:
     linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
-    rgba(219, 232, 222, 0.72);
+    rgba(219, 232, 222, 0.68);
+}
+
+.three-stage::before {
+  animation: water-glint 7.5s ease-in-out infinite alternate;
+  background:
+    radial-gradient(ellipse at 48% 72%, rgba(106, 199, 223, 0.28), transparent 22%),
+    linear-gradient(112deg, transparent 0%, rgba(255, 255, 255, 0.46) 45%, rgba(106, 199, 223, 0.24) 50%, transparent 62%);
+  content: "";
+  inset: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  position: absolute;
+  transform: translate3d(-28%, 0, 0);
+  z-index: 2;
+}
+
+.three-stage::after {
+  background:
+    radial-gradient(ellipse at 74% 24%, rgba(116, 223, 231, 0.16), transparent 28%),
+    linear-gradient(130deg, transparent 0%, rgba(255, 255, 255, 0.24) 47%, transparent 58%);
+  content: "";
+  inset: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
 }
 
 .three-stage canvas {
   display: block;
   height: 100%;
+  position: relative;
   width: 100%;
+  z-index: 1;
 }
 
 .control-surface {
   align-content: start;
   display: grid;
   gap: 18px;
+  overflow: hidden;
   padding: 22px;
+  position: relative;
+}
+
+.control-surface::before {
+  animation: panel-glimmer 9s ease-in-out infinite alternate;
+  background: linear-gradient(110deg, transparent 0%, rgba(106, 199, 223, 0.16) 45%, rgba(198, 228, 165, 0.2) 52%, transparent 64%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translate3d(-36%, 0, 0);
+}
+
+.control-surface > * {
+  position: relative;
+  z-index: 1;
 }
 
 .control-surface label {
@@ -395,7 +487,53 @@
 
 .control-surface input {
   accent-color: #4f745d;
+  cursor: pointer;
+  height: 22px;
   width: 100%;
+}
+
+.control-surface input[type="range"] {
+  appearance: none;
+  background: transparent;
+}
+
+.control-surface input[type="range"]::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(90deg, rgba(71, 107, 83, 0.9), rgba(95, 151, 124, 0.62)),
+    rgba(29, 42, 34, 0.12);
+  border: 1px solid rgba(29, 42, 34, 0.14);
+  border-radius: 999px;
+  height: 8px;
+}
+
+.control-surface input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  background:
+    radial-gradient(circle at 34% 28%, #ffffff 0 12%, transparent 13%),
+    linear-gradient(135deg, #6ac7df, #527f5e 55%, #243c2e);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  box-shadow: 0 8px 18px rgba(42, 71, 53, 0.28);
+  height: 22px;
+  margin-top: -8px;
+  width: 22px;
+}
+
+.control-surface input[type="range"]::-moz-range-track {
+  background:
+    linear-gradient(90deg, rgba(71, 107, 83, 0.9), rgba(95, 151, 124, 0.62)),
+    rgba(29, 42, 34, 0.12);
+  border: 1px solid rgba(29, 42, 34, 0.14);
+  border-radius: 999px;
+  height: 8px;
+}
+
+.control-surface input[type="range"]::-moz-range-thumb {
+  background: linear-gradient(135deg, #6ac7df, #527f5e 55%, #243c2e);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  height: 18px;
+  width: 18px;
 }
 
 .control-surface label span {
@@ -410,9 +548,16 @@
 }
 
 .metric-grid article {
-  background: #f7f8f2;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(246, 250, 241, 0.72)),
+    #f7f8f2;
   border-radius: 8px;
   padding: 14px;
+}
+
+.metric-grid span,
+.module-note span {
+  color: #667063;
 }
 
 .metric-grid strong {
@@ -421,10 +566,6 @@
   font-size: 1.5rem;
   line-height: 1.1;
   margin-top: 5px;
-}
-
-.electronics-layout {
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
 }
 
 .circuit-board {
@@ -441,18 +582,26 @@
     linear-gradient(rgba(198, 228, 165, 0.2) 1px, transparent 1px);
   background-size: 42px 42px;
   content: "";
-  inset: 0;
+  inset: -42px;
   opacity: 0.5;
   position: absolute;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .circuit-board article {
-  backdrop-filter: blur(16px);
   display: grid;
   min-height: clamp(150px, 20vh, 190px);
   padding: 18px;
   position: relative;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
   z-index: 1;
+}
+
+.circuit-board article:hover {
+  border-color: rgba(106, 199, 223, 0.34);
+  box-shadow: 0 28px 70px rgba(3, 12, 8, 0.24);
+  transform: translate3d(0, -6px, 0);
 }
 
 .circuit-board article span {
@@ -474,12 +623,8 @@
   margin: 8px 0 0;
 }
 
-.electronics-controls {
-  background: rgba(255, 255, 255, 0.88);
-}
-
 .segmented-options {
-  background: #eef3e8;
+  background: rgba(238, 243, 232, 0.84);
   border-radius: 8px;
   display: grid;
   gap: 4px;
@@ -502,6 +647,11 @@
   font-weight: 900;
   min-height: 42px;
   padding: 8px;
+  transition: background 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.segmented-options button:hover {
+  transform: translate3d(0, -1px, 0);
 }
 
 .segmented-options button.is-active {
@@ -515,55 +665,15 @@
 }
 
 .cta-page {
-  background:
-    radial-gradient(circle at 24% 72%, rgba(198, 228, 165, 0.16), transparent 34%),
-    linear-gradient(135deg, #111d16, #1c3024 52%, #0f1a14);
   color: #ffffff;
-  isolation: isolate;
-  overflow: hidden;
-}
-
-.cta-page::before {
-  animation: footer-photo-drift 38s cubic-bezier(0.42, 0, 0.16, 1) infinite alternate;
-  background:
-    linear-gradient(90deg, rgba(16, 25, 19, 0.84), rgba(16, 25, 19, 0.36)),
-    url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1800&q=85");
-  background-position: 50% 56%;
-  background-size: auto, 106%;
-  z-index: 0;
-}
-
-.cta-page::after {
-  animation: moisture-field 26s cubic-bezier(0.42, 0, 0.18, 1) infinite alternate-reverse;
-  background:
-    radial-gradient(ellipse at var(--glow-x) 84%, rgba(198, 228, 165, 0.24), transparent 28%),
-    radial-gradient(ellipse at 22% 76%, rgba(198, 228, 165, 0.28), transparent 26%),
-    radial-gradient(ellipse at 78% 18%, rgba(106, 199, 223, 0.16), transparent 34%),
-    linear-gradient(125deg, transparent 0%, rgba(255, 255, 255, 0.08) 46%, transparent 60%);
-  background-size: 100% 100%, 130% 130%, 120% 120%, 220% 220%;
-  mix-blend-mode: screen;
-  opacity: 0.72;
-  z-index: 1;
 }
 
 .cta-panel {
   max-width: 850px;
-  position: relative;
-  z-index: 3;
 }
 
 .cta-panel h2 {
   font-size: clamp(2.5rem, 5.2vw, 5.8rem);
-  letter-spacing: 0;
-  line-height: 0.98;
-  margin: 0;
-}
-
-.cta-panel p {
-  font-size: 1.08rem;
-  line-height: 1.58;
-  margin: 22px 0 0;
-  max-width: 640px;
 }
 
 .cta-button {
@@ -586,94 +696,194 @@
   background: #ffffff;
 }
 
-@keyframes panorama-breathe {
+@keyframes ambient-panorama {
   0% {
-    filter: saturate(1.02) contrast(1.04) brightness(0.74);
+    transform: translate3d(-1.8vw, 0.6vh, 0) scale(1.015);
   }
-  46% {
-    filter: saturate(1.13) contrast(1.07) brightness(0.8);
+  45% {
+    transform: translate3d(1.4vw, -0.5vh, 0) scale(1.025);
   }
   100% {
-    filter: saturate(1.08) contrast(1.05) brightness(0.76);
+    transform: translate3d(2.2vw, 0.4vh, 0) scale(1.018);
   }
 }
 
-@keyframes moisture-field {
+@keyframes grow-rig-sweep {
   0% {
-    background-position: 50% 50%, 0% 0%, 100% 20%, 0% 50%, 0% 0%;
+    opacity: 0.42;
+    transform: translate3d(calc(var(--panorama-light-x) + var(--pointer-x) * 6vw - 28vw), 0, 0) skewX(-8deg);
+  }
+  48% {
+    opacity: 0.82;
   }
   100% {
-    background-position: 50% 50%, 100% 70%, 18% 100%, 100% 50%, 100% 100%;
+    opacity: 0.58;
+    transform: translate3d(calc(var(--panorama-light-x) + var(--pointer-x) * 6vw + 32vw), 0, 0) skewX(-8deg);
+  }
+}
+
+@keyframes greenhouse-mist {
+  0% {
+    opacity: 0.36;
+    transform: translate3d(calc(var(--pointer-x) * -1.3vw - 4vw), calc(var(--pointer-y) * 0.8vh + 1vh), 0) scale(1);
+  }
+  54% {
+    opacity: 0.64;
+  }
+  100% {
+    opacity: 0.48;
+    transform: translate3d(calc(var(--pointer-x) * -1.3vw + 5vw), calc(var(--pointer-y) * 0.8vh - 1.4vh), 0) scale(1.04);
+  }
+}
+
+@keyframes prismatic-veil {
+  0% {
+    opacity: 0.38;
+    transform: translate3d(-24%, 0, 0) skewX(-6deg);
+  }
+  100% {
+    opacity: 0.82;
+    transform: translate3d(18%, 0, 0) skewX(-6deg);
+  }
+}
+
+@keyframes reservoir-glints {
+  0% {
+    opacity: 0.18;
+    transform: translate3d(-5vw, 1.2vh, 0) scale(1);
+  }
+  52% {
+    opacity: 0.66;
+  }
+  100% {
+    opacity: 0.36;
+    transform: translate3d(5vw, -1vh, 0) scale(1.05);
+  }
+}
+
+@keyframes rig-lines {
+  0% {
+    transform: translate3d(-8vw, 0, 0);
+  }
+  100% {
+    transform: translate3d(8vw, 0, 0);
+  }
+}
+
+@keyframes panel-glimmer {
+  0% {
+    opacity: 0;
+    transform: translate3d(-72%, 0, 0);
+  }
+  45% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.2;
+    transform: translate3d(72%, 0, 0);
+  }
+}
+
+@keyframes water-glint {
+  0% {
+    opacity: 0.12;
+    transform: translate3d(-48%, 0, 0);
+  }
+  42% {
+    opacity: 0.62;
+  }
+  100% {
+    opacity: 0.22;
+    transform: translate3d(48%, 0, 0);
+  }
+}
+
+@keyframes circuit-grid-scan {
+  0% {
+    transform: translate3d(-42px, -42px, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes grow-light-scan {
   0% {
     opacity: 0.42;
-    width: 42%;
+    transform: scaleX(0.58);
   }
   100% {
     opacity: 0.96;
-    width: 72%;
+    transform: scaleX(1);
   }
 }
 
-@keyframes footer-photo-drift {
+@keyframes section-rise {
   0% {
-    background-position: 50% 56%, 49% 54%;
-    background-size: auto, 106%;
-    filter: saturate(0.96) brightness(0.94);
-  }
-  54% {
-    filter: saturate(1.04) brightness(0.98);
+    opacity: 0.78;
+    scale: 0.985;
+    translate: 0 26px;
   }
   100% {
-    background-position: 50% 56%, 53% 48%;
-    background-size: auto, 113%;
-    filter: saturate(1.02) brightness(0.96);
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
   }
 }
 
-@keyframes circuit-grid-scan {
-  0% {
-    background-position: 0 0, 0 0;
-  }
-  100% {
-    background-position: 42px 0, 0 42px;
+@supports (animation-timeline: view()) {
+  .section-copy,
+  .control-surface,
+  .circuit-board article,
+  .cta-panel {
+    animation: section-rise both;
+    animation-range: entry 0% cover 34%;
+    animation-timeline: view();
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-panorama__image,
+  .studio-panorama__image,
+  .studio-panorama__haze,
+  .studio-panorama__light,
+  .studio-panorama__glass,
+  .studio-panorama__haze::before,
+  .studio-panorama__haze::after,
+  .studio-panorama__light::before,
+  .studio-panorama__light::after,
+  .studio-panorama__glass::before,
+  .studio-panorama__glass::after,
   .hero-content::before,
-  .cad-page::before,
-  .electronics-page::before,
-  .simulation-page::before,
-  .cad-page,
-  .electronics-page,
-  .simulation-page,
+  .hero-telemetry::before,
+  .three-stage::before,
   .circuit-board::before,
-  .cta-page::before,
-  .cta-page::after {
+  .control-surface::before,
+  .section-copy,
+  .control-surface,
+  .circuit-board article,
+  .cta-panel {
     animation: none;
   }
 
   .hero-content,
-  .hero-panorama__image,
-  .hero-panorama__depth,
+  .hero-telemetry,
   .section-copy,
-  .cad-page::before,
-  .cad-page::after,
-  .electronics-page::before,
-  .electronics-page::after,
-  .simulation-page::before,
-  .simulation-page::after {
+  .studio-panorama__haze::before,
+  .studio-panorama__haze::after,
+  .studio-panorama__light::before,
+  .studio-panorama__light::after,
+  .studio-panorama__glass::before,
+  .studio-panorama__glass::after {
     transform: none;
   }
 
-  .hero-content,
-  .section-copy {
+  .section-copy,
+  .control-surface,
+  .circuit-board article,
+  .cta-panel {
     opacity: 1;
+    scale: 1;
+    translate: 0 0;
   }
 }
 
@@ -687,7 +897,6 @@
   .circuit-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
 }
 
 @media (max-width: 640px) {
@@ -701,20 +910,36 @@
     padding: 0;
   }
 
-  .cta-page {
-    min-height: 100svh;
-  }
-
   .hero-viewport {
     padding: 54px 14px;
+  }
+
+  .hero-content {
+    max-width: 100%;
   }
 
   .hero-content h1 {
     font-size: 2.45rem;
   }
 
-  .hero-content {
-    max-width: 100%;
+  .hero-telemetry {
+    bottom: 18px;
+    left: 14px;
+    right: 14px;
+    width: auto;
+  }
+
+  .hero-telemetry article {
+    min-height: 68px;
+    padding: 13px 10px;
+  }
+
+  .hero-telemetry span {
+    font-size: 0.58rem;
+  }
+
+  .hero-telemetry strong {
+    font-size: 0.94rem;
   }
 
   .section-copy h2 {
@@ -722,7 +947,7 @@
   }
 
   .three-stage {
-    min-height: 320px;
+    height: 320px;
   }
 
   .metric-grid,
@@ -734,5 +959,4 @@
   .cta-panel h2 {
     font-size: 2.35rem;
   }
-
 }

@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
 import { PNG } from 'pngjs';
+import { getChromiumExecutablePath } from './playwright-utils.mjs';
 
 const root = process.cwd();
 const port = process.env.UI_VERIFY_PORT || '4173';
@@ -116,26 +116,26 @@ const server = spawn(process.execPath, [viteBin, '--host', '127.0.0.1', '--port'
 try {
   await waitForServer();
 
-  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
-    || (existsSync('/snap/bin/chromium') ? '/snap/bin/chromium' : undefined);
-
   const browser = await chromium.launch({
-    executablePath,
+    executablePath: getChromiumExecutablePath(),
     headless: true,
   });
 
-  const reports = [];
-  for (const viewport of [
-    { height: 1000, name: 'desktop', width: 1440 },
-    { height: 844, name: 'mobile', width: 390 },
-  ]) {
-    const report = await inspectViewport(browser, viewport);
-    assertReport(report);
-    reports.push(report);
-  }
+  try {
+    const reports = [];
+    for (const viewport of [
+      { height: 1000, name: 'desktop', width: 1440 },
+      { height: 844, name: 'mobile', width: 390 },
+    ]) {
+      const report = await inspectViewport(browser, viewport);
+      assertReport(report);
+      reports.push(report);
+    }
 
-  await browser.close();
-  console.log(JSON.stringify(reports, null, 2));
+    console.log(JSON.stringify(reports, null, 2));
+  } finally {
+    await browser.close();
+  }
 } finally {
   server.kill('SIGTERM');
 }

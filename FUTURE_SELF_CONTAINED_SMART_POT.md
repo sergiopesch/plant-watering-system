@@ -17,7 +17,7 @@ Build a **self-contained plant pot platform** with:
 
 The goal is not just "automatic watering". The more interesting product is a **plant life-support node** that can be designed digitally, tested virtually, manufactured locally, and monitored through intelligent software.
 
-The current first increment is a public studio at `/`. It establishes the brand, metadata, favicon, a pointer-responsive living hero, configurable pot geometry, first-pass environmental estimates, CAD/electronics/simulation pages, a final build CTA, and the system module map. It intentionally stops short of pretending to be a finished CAD or physics environment.
+The current first increment is a public studio at `/`. It establishes the brand, metadata, favicon, a full-page 8K panoramic smart-pot showroom, scroll-driven product storytelling, configurable pot geometry, first-pass environmental estimates, CAD/electronics/simulation pages, a final build CTA, and the system module map. It intentionally stops short of pretending to be a finished CAD or physics environment.
 
 The screenshot above is captured from the current running product and should be refreshed when the first viewport changes materially.
 
