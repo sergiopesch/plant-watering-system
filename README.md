@@ -25,13 +25,14 @@ It includes:
 - product direction for a self-contained smart plant pot system
 - living pointer-responsive leaves in the opening scene
 - a one-page-at-a-time immersive flow
-- parametric pot geometry controls
-- material and plant profile choices
-- Three.js CAD and simulation scenes
-- first-pass autonomy, soil volume, water demand, dose, and print-time estimates
+- a minimal CAD workbench with direct 3D manipulation, exploded assembly, flow/stress/section modes, and profile/material controls
+- unit-based CAD checks for soil volume, mass, hydrostatic pressure, hoop stress, safety factor, stability angle, and internal tube routing
+- a compact validation page with scenario-based environment checks instead of low-level sliders
+- higher fidelity Three.js CAD and simulation scenes with physical materials, shadows, soil detail, water bands, and plant geometry
+- first-pass autonomy, water demand, and dose estimates
 - a full-page 8K panoramic smart-pot showroom background with compositor-driven scroll motion
 
-This is not yet a real CAD kernel or physics engine. It is the foundation for those layers.
+This is not yet a full CAD kernel, CFD solver, or finite-element engine. The current implementation provides physically grounded geometry/math checks and high-fidelity WebGL visualization as the foundation for those layers.
 
 ## Visual System
 
@@ -63,9 +64,9 @@ npm run docs:banner
 The current public experience is structured as five immersive pages:
 
 1. **Design system v0.1**: living pointer-responsive hero and product positioning.
-2. **CAD 3D**: interactive geometry controls with a Three.js pot concept.
+2. **CAD Workbench**: minimal interactive CAD controls, direct canvas manipulation, exploded assembly, internal fluid routing, and unit-based physics readouts.
 3. **Electronics**: modular controller, sensor, pump, and material selection model.
-4. **Simulated world**: environmental controls for temperature, humidity, light, water use, and autonomy.
+4. **Validation**: one-scenario environment checks with hyper-real Three.js rendering and minimal water-use/autonomy readouts.
 5. **Start building**: final call to action for moving from concept into a first printable prototype.
 
 The banner image above is a real screenshot of the current local product UI, captured from the live Vite app.
@@ -74,8 +75,8 @@ The banner image above is a real screenshot of the current local product UI, cap
 
 The long-term system has six layers:
 
-- CAD design: parametric pot, reservoir, dry electronics bay, sensor spine, tubing channels, service covers, printable split lines
-- Simulation: water balance, evaporation, reservoir mass, soil moisture trend, sensor noise, pump flow, failure conditions
+- CAD design: parametric pot, reservoir, dry electronics bay, sensor spine, constrained internal tubing channels, service covers, printable split lines
+- Simulation: scenario-based water demand, reservoir autonomy, dosing, plant response visualization, and later sensor uncertainty/failure states
 - Materials: PETG or ASA for early printed prototypes, optional ceramic or sleeve materials later
 - Electronics: ESP32-S3 class controller, capacitive soil moisture sensor, reservoir level sensor, environment sensor, light sensor, pump driver
 - Firmware: autonomous dosing loop with soak/observe/fault-detect behavior
@@ -185,7 +186,7 @@ Dependabot is configured in `.github/dependabot.yml` for npm packages and GitHub
 
 1. Extract the studio configuration into a typed domain model.
 2. Add a real parametric geometry generator and STL export path.
-3. Add a simulation model with explicit water balance, pump dosing, sensor uncertainty, and failure states.
+3. Replace the current scenario validation with an explicit water-balance model, pump dosing, sensor uncertainty, and failure states.
 4. Define the ESP32 firmware command/telemetry schema.
 5. Add prototype BOM, wiring, assembly, and calibration docs.
 6. Validate one printable v1 pot before broadening into multi-pot orchestration.

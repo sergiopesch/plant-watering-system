@@ -191,6 +191,10 @@
     linear-gradient(180deg, rgba(250, 252, 245, 0.12), rgba(218, 229, 218, 0.34));
 }
 
+.simulation-page::before {
+  background: rgba(244, 248, 241, 0.94);
+}
+
 .electronics-page::before {
   background:
     linear-gradient(90deg, rgba(2, 8, 5, 0.9) 0%, rgba(7, 17, 11, 0.66) 38%, rgba(10, 24, 18, 0.38) 72%, rgba(2, 8, 5, 0.84) 100%),
@@ -323,7 +327,6 @@
 }
 
 .hero-telemetry span,
-.metric-grid span,
 .module-note span {
   color: rgba(229, 246, 218, 0.68);
   font-size: 0.7rem;
@@ -359,9 +362,36 @@
   color: #122119;
 }
 
+.cad-page .section-copy {
+  margin-bottom: 18px;
+}
+
+.cad-page .section-copy h2 {
+  max-width: 780px;
+}
+
+.cad-page .section-copy p {
+  max-width: 560px;
+}
+
 .cad-page .section-copy p,
 .simulation-page .section-copy p {
   color: rgba(18, 33, 25, 0.78);
+}
+
+.simulation-page .section-copy {
+  margin-bottom: 16px;
+  max-width: 1010px;
+}
+
+.simulation-page .section-copy h2 {
+  font-size: clamp(2.1rem, 3.2vw, 3.8rem);
+  max-width: 640px;
+}
+
+.simulation-page .section-copy p {
+  margin-top: 14px;
+  max-width: 460px;
 }
 
 .electronics-page .section-copy p {
@@ -380,6 +410,40 @@
 
 .electronics-layout {
   grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+}
+
+.simulation-workbench {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  margin: 0 auto;
+  max-width: 1010px;
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+.simulation-stage-panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cad-workbench {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
+  margin: 0 auto;
+  max-width: 1240px;
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+.cad-viewer-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
 }
 
 .control-surface,
@@ -413,10 +477,36 @@
   transform: translateZ(0);
 }
 
-.simulation-grid .three-stage {
+.cad-stage {
   background:
-    linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
-    rgba(219, 232, 222, 0.68);
+    linear-gradient(90deg, rgba(22, 37, 28, 0.055) 1px, transparent 1px),
+    linear-gradient(rgba(22, 37, 28, 0.055) 1px, transparent 1px),
+    #f5f8f2;
+  background-size: 34px 34px, 34px 34px, auto;
+  box-shadow: 0 18px 48px rgba(18, 35, 24, 0.14);
+  cursor: grab;
+  height: clamp(500px, 62vh, 690px);
+  min-height: 500px;
+  touch-action: none;
+}
+
+.cad-stage:focus-visible {
+  outline: 2px solid rgba(66, 111, 83, 0.8);
+  outline-offset: 4px;
+}
+
+.cad-stage.is-grabbing {
+  cursor: grabbing;
+}
+
+.simulation-stage-panel .three-stage {
+  background:
+    linear-gradient(90deg, rgba(32, 50, 38, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(32, 50, 38, 0.045) 1px, transparent 1px),
+    #f6f8f3;
+  background-size: 36px 36px, 36px 36px, auto;
+  box-shadow: 0 16px 38px rgba(18, 35, 24, 0.12);
+  height: clamp(340px, 44vh, 480px);
 }
 
 .three-stage::before {
@@ -433,6 +523,10 @@
   z-index: 2;
 }
 
+.cad-stage::before {
+  opacity: 0.18;
+}
+
 .three-stage::after {
   background:
     radial-gradient(ellipse at 74% 24%, rgba(116, 223, 231, 0.16), transparent 28%),
@@ -445,12 +539,93 @@
   z-index: 3;
 }
 
+.cad-stage::after {
+  background:
+    linear-gradient(130deg, transparent 0%, rgba(255, 255, 255, 0.16) 47%, transparent 58%);
+}
+
 .three-stage canvas {
   display: block;
   height: 100%;
   position: relative;
   width: 100%;
   z-index: 1;
+}
+
+.cad-stage canvas {
+  cursor: inherit;
+}
+
+.cad-hud {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  left: 14px;
+  pointer-events: none;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 4;
+}
+
+.cad-hud div {
+  backdrop-filter: blur(18px) saturate(1.18);
+  background: rgba(250, 252, 248, 0.82);
+  border: 1px solid rgba(43, 72, 54, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 10px 24px rgba(31, 54, 41, 0.08);
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.cad-hud span {
+  color: #426f53;
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.cad-hud strong {
+  color: #15221b;
+  display: block;
+  font-size: clamp(0.78rem, 1.2vw, 0.98rem);
+  line-height: 1.08;
+  margin-top: 4px;
+}
+
+.cad-mode-hud {
+  align-items: center;
+  backdrop-filter: blur(18px) saturate(1.18);
+  background: rgba(20, 31, 24, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  bottom: 14px;
+  box-shadow: 0 14px 36px rgba(14, 31, 22, 0.18);
+  color: #f7fbf2;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  left: 14px;
+  min-height: 42px;
+  padding: 8px 12px;
+  position: absolute;
+  right: 14px;
+  z-index: 4;
+}
+
+.cad-mode-hud span,
+.cad-mode-hud strong {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.cad-mode-hud strong {
+  color: #c6e4a5;
 }
 
 .control-surface {
@@ -475,6 +650,58 @@
 .control-surface > * {
   position: relative;
   z-index: 1;
+}
+
+.cad-control-surface {
+  backdrop-filter: blur(14px) saturate(1.03);
+  background: rgba(250, 252, 247, 0.9);
+  border: 1px solid rgba(56, 77, 63, 0.14);
+  box-shadow: 0 18px 42px rgba(18, 35, 24, 0.12);
+  gap: 0;
+  padding: 14px;
+}
+
+.cad-control-surface::before {
+  display: none;
+}
+
+.cad-inspector-title {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 2px 2px 12px;
+}
+
+.cad-inspector-title span,
+.cad-inspector-title strong,
+.control-group h3 {
+  color: #26352b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.cad-inspector-title strong {
+  color: #6f7a70;
+}
+
+.control-group {
+  border-top: 1px solid rgba(29, 42, 34, 0.1);
+  display: grid;
+  gap: 10px;
+  padding: 14px 2px;
+}
+
+.control-group:last-child {
+  padding-bottom: 2px;
+}
+
+.control-stack {
+  display: grid;
+  gap: 11px;
 }
 
 .control-surface label {
@@ -541,31 +768,187 @@
   font-size: 0.84rem;
 }
 
-.metric-grid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.cad-control-surface label {
+  align-items: center;
+  color: #334038;
+  font-size: 0.78rem;
+  gap: 5px 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.metric-grid article {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(246, 250, 241, 0.72)),
-    #f7f8f2;
+.cad-control-surface label input {
+  grid-column: 1 / -1;
+}
+
+.simulation-minimal-panel {
+  align-content: start;
+  align-self: start;
+  backdrop-filter: blur(12px) saturate(1.02);
+  background: rgba(250, 252, 247, 0.88);
+  border: 1px solid rgba(56, 77, 63, 0.12);
   border-radius: 8px;
+  box-shadow: 0 16px 38px rgba(18, 35, 24, 0.1);
+  color: #26352b;
+  display: grid;
+  gap: 14px;
   padding: 14px;
 }
 
-.metric-grid span,
-.module-note span {
-  color: #667063;
+.simulation-minimal-panel label {
+  color: #334038;
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 7px;
+  text-transform: uppercase;
 }
 
-.metric-grid strong {
+.simulation-minimal-panel select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #526459 50%) right 12px center / 7px 7px no-repeat,
+    linear-gradient(135deg, #ffffff, #f1f4ee);
+  border: 1px solid rgba(56, 77, 63, 0.16);
+  border-radius: 6px;
+  color: #26352b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  min-height: 40px;
+  padding: 0 34px 0 10px;
+  text-transform: none;
+  width: 100%;
+}
+
+.cad-control-surface .select-control select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #526459 50%) right 12px center / 7px 7px no-repeat,
+    linear-gradient(135deg, #ffffff, #f1f4ee);
+  border: 1px solid rgba(56, 77, 63, 0.16);
+  border-radius: 6px;
+  color: #26352b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  grid-column: 1 / -1;
+  min-height: 38px;
+  padding: 0 34px 0 10px;
+  width: 100%;
+}
+
+.cad-control-surface .select-control select:focus-visible {
+  outline: 2px solid rgba(66, 111, 83, 0.5);
+  outline-offset: 2px;
+}
+
+.cad-control-surface label span {
+  color: #6e786f;
+  font-size: 0.76rem;
+  justify-self: end;
+}
+
+.cad-control-surface input[type="range"]::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #3e6049, #86a078);
+  border: 0;
+  height: 6px;
+}
+
+.cad-control-surface input[type="range"]::-webkit-slider-thumb {
+  background: #ffffff;
+  border: 2px solid #355341;
+  box-shadow: 0 4px 12px rgba(42, 71, 53, 0.22);
+  height: 18px;
+  margin-top: -6px;
+  width: 18px;
+}
+
+.cad-control-surface input[type="range"]::-moz-range-track {
+  background: linear-gradient(90deg, #3e6049, #86a078);
+  border: 0;
+  height: 6px;
+}
+
+.cad-control-surface input[type="range"]::-moz-range-thumb {
+  background: #ffffff;
+  border: 2px solid #355341;
+  height: 16px;
+  width: 16px;
+}
+
+.cad-status-strip {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.simulation-result-strip,
+.simulation-condition-strip {
+  display: grid;
+  gap: 8px;
+}
+
+.simulation-result-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.simulation-condition-strip {
+  grid-template-columns: 1fr;
+}
+
+.cad-status-strip article,
+.physics-readout article,
+.simulation-result-strip article,
+.simulation-condition-strip article {
+  background: rgba(250, 252, 247, 0.86);
+  border: 1px solid rgba(56, 77, 63, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(18, 35, 24, 0.08);
+  min-width: 0;
+  padding: 12px;
+}
+
+.cad-status-strip span,
+.physics-readout span,
+.simulation-result-strip span,
+.simulation-condition-strip span {
+  color: #6b746d;
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cad-status-strip strong,
+.physics-readout strong,
+.simulation-result-strip strong,
+.simulation-condition-strip strong {
   color: #1e3027;
   display: block;
-  font-size: 1.5rem;
-  line-height: 1.1;
-  margin-top: 5px;
+  font-size: clamp(1rem, 1.5vw, 1.34rem);
+  line-height: 1;
+  margin-top: 6px;
+}
+
+.physics-readout {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.physics-readout article {
+  box-shadow: none;
+  padding: 10px;
+}
+
+.physics-readout strong {
+  font-size: 0.98rem;
+}
+
+.module-note span {
+  color: #667063;
 }
 
 .circuit-board {
@@ -658,6 +1041,24 @@
   background: #ffffff;
   box-shadow: 0 6px 16px rgba(48, 61, 49, 0.12);
   color: #18221c;
+}
+
+.cad-control-surface .segmented-options {
+  background: #eef2eb;
+  border: 1px solid rgba(56, 77, 63, 0.08);
+  gap: 3px;
+  padding: 3px;
+}
+
+.cad-control-surface .segmented-options button {
+  border-radius: 5px;
+  font-size: 0.76rem;
+  min-height: 36px;
+  padding: 7px 6px;
+}
+
+.cad-control-surface .segmented-options button.is-active {
+  box-shadow: 0 4px 12px rgba(48, 61, 49, 0.1);
 }
 
 .module-note {
@@ -890,6 +1291,8 @@
 @media (max-width: 940px) {
   .hero-page,
   .immersive-grid,
+  .cad-workbench,
+  .simulation-workbench,
   .electronics-layout {
     grid-template-columns: 1fr;
   }
@@ -950,9 +1353,43 @@
     height: 320px;
   }
 
-  .metric-grid,
+  .cad-stage {
+    height: 420px;
+    min-height: 360px;
+  }
+
+  .simulation-stage-panel .three-stage {
+    height: 340px;
+  }
+
+  .cad-hud {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    left: 10px;
+    right: 10px;
+    top: 10px;
+  }
+
+  .cad-hud div {
+    padding: 8px;
+  }
+
+  .cad-mode-hud {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
   .circuit-board,
-  .material-options {
+  .material-options,
+  .physics-readout {
+    grid-template-columns: 1fr;
+  }
+
+  .cad-status-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .simulation-result-strip {
     grid-template-columns: 1fr;
   }
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ACESFilmicToneMapping,
   BoxGeometry,
+  CanvasTexture,
   CapsuleGeometry,
   CatmullRomCurve3,
   CircleGeometry,
@@ -8,20 +10,32 @@ import {
   Color,
   CylinderGeometry,
   DirectionalLight,
+  DoubleSide,
+  EdgesGeometry,
   Group,
+  GridHelper,
   HemisphereLight,
+  LatheGeometry,
+  LineBasicMaterial,
+  LineSegments,
   Mesh,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  PCFSoftShadowMap,
   PerspectiveCamera,
+  PlaneGeometry,
+  RepeatWrapping,
+  RingGeometry,
   Scene,
   SphereGeometry,
   SRGBColorSpace,
   TorusGeometry,
   TubeGeometry,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import './styles/Studio.css';
 
 const plantProfiles = [
@@ -31,9 +45,54 @@ const plantProfiles = [
 ];
 
 const materials = [
-  { id: 'petg', label: 'PETG', score: 91, color: '#5f8d68', note: 'Water tolerant and practical for first prints' },
-  { id: 'asa', label: 'ASA', score: 86, color: '#45524b', note: 'Tougher under heat and sun, harder to print' },
-  { id: 'ceramic', label: 'Ceramic sleeve', score: 72, color: '#d9d0bd', note: 'Premium exterior around printable internals' },
+  {
+    id: 'petg',
+    label: 'PETG',
+    score: 91,
+    color: '#5f8d68',
+    densityGcm3: 1.27,
+    tensileMpa: 50,
+    note: 'Water tolerant and practical for first prints',
+  },
+  {
+    id: 'asa',
+    label: 'ASA',
+    score: 86,
+    color: '#45524b',
+    densityGcm3: 1.07,
+    tensileMpa: 43,
+    note: 'Tougher under heat and sun, harder to print',
+  },
+  {
+    id: 'ceramic',
+    label: 'Ceramic sleeve',
+    score: 72,
+    color: '#d9d0bd',
+    densityGcm3: 2.15,
+    tensileMpa: 28,
+    note: 'Premium exterior around printable internals',
+  },
+];
+
+const cadModes = [
+  { id: 'assembly', label: 'Assembly' },
+  { id: 'flow', label: 'Flow test' },
+  { id: 'stress', label: 'Stress test' },
+  { id: 'section', label: 'Section' },
+];
+
+const cadProfiles = [
+  { id: 'tapered', label: 'Tapered', bottom: 0.72, shoulder: 0.92, top: 1.03 },
+  { id: 'straight', label: 'Straight', bottom: 0.88, shoulder: 0.98, top: 1 },
+  { id: 'bell', label: 'Bell', bottom: 0.64, shoulder: 0.94, top: 1.16 },
+];
+
+const defaultRimWidth = 7;
+
+const simulationProfiles = [
+  { id: 'room', label: 'Room baseline', temperature: 23, humidity: 48, light: 62 },
+  { id: 'window', label: 'Hot window', temperature: 30, humidity: 34, light: 92 },
+  { id: 'shade', label: 'Cool shade', temperature: 18, humidity: 64, light: 28 },
 ];
 
 const electronics = [
@@ -59,6 +118,126 @@ function smoothstep(value) {
 
 function formatLiters(value) {
   return `${value.toFixed(1)} L`;
+}
+
+function formatKpa(value) {
+  return `${value.toFixed(1)} kPa`;
+}
+
+function formatKg(value) {
+  return `${value.toFixed(2)} kg`;
+}
+
+function frustumVolumeMm3(heightMm, bottomRadiusMm, topRadiusMm) {
+  return Math.PI * heightMm * (
+    bottomRadiusMm ** 2 + bottomRadiusMm * topRadiusMm + topRadiusMm ** 2
+  ) / 3;
+}
+
+function tubeVolumeMm3(centerRadiusMm, tubeRadiusMm) {
+  return 2 * Math.PI ** 2 * centerRadiusMm * tubeRadiusMm ** 2;
+}
+
+export function getCadEnvelopeRadiusAtY(y, dimensions) {
+  const { baseY, outerBottom, outerShoulder, outerTop, topY } = dimensions;
+  if (y <= baseY) return outerBottom;
+  if (y >= topY - 0.48) return outerTop;
+
+  const lowerSpan = Math.max((topY - 0.48) - (baseY + 0.1), 0.001);
+  const lowerProgress = clamp((y - (baseY + 0.1)) / lowerSpan, 0, 1);
+  return interpolate(outerBottom, outerShoulder, smoothstep(lowerProgress));
+}
+
+export function buildInternalTubePath(dimensions) {
+  const {
+    baseY,
+    radius,
+    topY,
+    wall,
+  } = dimensions;
+  const tubeRadius = 0.022;
+  const clearance = Math.max(wall + tubeRadius + 0.04, 0.12);
+
+  const clampInside = (point) => {
+    const envelope = getCadEnvelopeRadiusAtY(point.y, dimensions);
+    const maxRadial = Math.max(envelope - clearance, radius * 0.34);
+    const radial = Math.hypot(point.x, point.z);
+    if (radial <= maxRadial) return point;
+
+    const scale = maxRadial / Math.max(radial, 0.001);
+    return new Vector3(point.x * scale, point.y, point.z * scale);
+  };
+
+  return [
+    clampInside(new Vector3(-radius * 0.34, baseY + 0.2, radius * 0.12)),
+    clampInside(new Vector3(-radius * 0.5, -0.2, radius * 0.22)),
+    clampInside(new Vector3(-radius * 0.38, topY - 0.44, radius * 0.24)),
+    clampInside(new Vector3(-radius * 0.12, topY - 0.1, radius * 0.18)),
+  ];
+}
+
+function buildCadPhysics({
+  diameter,
+  height,
+  reservoir,
+  wallThickness,
+  rimWidth,
+  selectedMaterial,
+  profileId,
+}) {
+  const profile = cadProfiles.find((candidate) => candidate.id === profileId) ?? cadProfiles[0];
+  const nominalRadiusMm = diameter / 2;
+  const outerBottomRadiusMm = nominalRadiusMm * profile.bottom;
+  const outerShoulderRadiusMm = nominalRadiusMm * profile.shoulder;
+  const outerTopRadiusMm = nominalRadiusMm * profile.top;
+  const shellHeightMm = height;
+  const innerBottomRadiusMm = Math.max(outerBottomRadiusMm - wallThickness * 0.62, nominalRadiusMm * 0.46);
+  const innerTopRadiusMm = Math.max(outerTopRadiusMm - wallThickness, nominalRadiusMm * 0.55);
+  const soilHeightMm = height * 0.68;
+  const soilVolumeL = frustumVolumeMm3(soilHeightMm, innerBottomRadiusMm, innerTopRadiusMm) / 1000000;
+
+  const outerShellVolumeMm3 = frustumVolumeMm3(shellHeightMm, outerBottomRadiusMm, outerTopRadiusMm);
+  const innerShellVolumeMm3 = frustumVolumeMm3(
+    shellHeightMm - wallThickness * 1.8,
+    innerBottomRadiusMm,
+    innerTopRadiusMm,
+  );
+  const rimVolumeMm3 = tubeVolumeMm3(Math.max(outerTopRadiusMm, nominalRadiusMm * 0.86), rimWidth);
+  const gasketVolumeMm3 = Math.PI * ((nominalRadiusMm * 0.98) ** 2 - (nominalRadiusMm * 0.74) ** 2) * 18;
+  const printableVolumeCm3 = Math.max(
+    (outerShellVolumeMm3 - innerShellVolumeMm3 + rimVolumeMm3 + gasketVolumeMm3) / 1000,
+    1,
+  );
+  const dryMassKg = printableVolumeCm3 * selectedMaterial.densityGcm3 / 1000;
+
+  const reservoirVolumeMm3 = reservoir * 1000000;
+  const reservoirBottomRadiusMm = nominalRadiusMm * 0.72;
+  const reservoirTopRadiusMm = nominalRadiusMm * 0.86;
+  const reservoirAreaMm2 = Math.PI * ((reservoirBottomRadiusMm + reservoirTopRadiusMm) / 2) ** 2;
+  const waterColumnM = clamp(reservoirVolumeMm3 / reservoirAreaMm2, 35, height * 0.45) / 1000;
+  const hydrostaticPressurePa = 997 * 9.80665 * waterColumnM;
+  const pumpPeakPressurePa = 55000;
+  const designPressurePa = hydrostaticPressurePa + pumpPeakPressurePa;
+  const hoopStressMpa = designPressurePa * (outerTopRadiusMm / 1000) / (wallThickness / 1000) / 1000000;
+  const safetyFactor = selectedMaterial.tensileMpa / Math.max(hoopStressMpa, 0.001);
+  const waterMassKg = reservoir;
+  const soilMassKg = soilVolumeL * 0.85;
+  const totalMassKg = dryMassKg + waterMassKg + soilMassKg;
+  const centerOfMassHeightMm = (
+    dryMassKg * height * 0.44 + waterMassKg * height * 0.18 + soilMassKg * height * 0.58
+  ) / Math.max(totalMassKg, 0.001);
+  const stabilityAngleDeg = Math.atan(outerBottomRadiusMm / centerOfMassHeightMm) * 180 / Math.PI;
+
+  return {
+    dryMassKg,
+    hydrostaticPressureKpa: hydrostaticPressurePa / 1000,
+    hoopStressMpa,
+    printableVolumeCm3,
+    safetyFactor,
+    soilVolumeL,
+    stabilityAngleDeg,
+    totalMassKg,
+  };
 }
 
 const cssVars = {
@@ -193,7 +372,107 @@ function usePanoramaMotion() {
   return shellRef;
 }
 
-const ThreeStage = ({ variant, diameter, height, reservoir, materialColor, light, humidity }) => {
+function makeMachinedTexture(baseColor) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext('2d');
+  const base = new Color(baseColor);
+  const dark = base.clone().multiplyScalar(0.55).getStyle();
+  const light = base.clone().lerp(new Color(0xffffff), 0.42).getStyle();
+
+  context.fillStyle = base.getStyle();
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < canvas.height; y += 1) {
+    const band = 0.5 + Math.sin(y * 0.34) * 0.18 + Math.sin(y * 2.1) * 0.04;
+    context.fillStyle = band > 0.55 ? light : dark;
+    context.globalAlpha = band > 0.55 ? 0.08 : 0.06;
+    context.fillRect(0, y, canvas.width, 1);
+  }
+
+  context.globalAlpha = 0.12;
+  for (let x = 0; x < canvas.width; x += 11) {
+    context.fillStyle = x % 22 === 0 ? '#ffffff' : '#000000';
+    context.fillRect(x, 0, 1, canvas.height);
+  }
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = RepeatWrapping;
+  texture.repeat.set(3, 7);
+  return texture;
+}
+
+function makeSoilTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#4c4033';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let index = 0; index < 4200; index += 1) {
+    const xSeed = Math.sin(index * 12.9898) * 43758.5453;
+    const ySeed = Math.sin(index * 78.233) * 19341.413;
+    const sizeSeed = Math.sin(index * 37.719) * 28411.129;
+    const shadeSeed = Math.sin(index * 4.761) * 9173.771;
+    const alphaSeed = Math.sin(index * 9.173) * 19191.13;
+    const xRandom = xSeed - Math.floor(xSeed);
+    const yRandom = ySeed - Math.floor(ySeed);
+    const sizeRandom = sizeSeed - Math.floor(sizeSeed);
+    const shadeRandom = shadeSeed - Math.floor(shadeSeed);
+    const alphaRandom = alphaSeed - Math.floor(alphaSeed);
+    const x = xRandom * canvas.width;
+    const y = yRandom * canvas.height;
+    const size = 0.8 + sizeRandom * 3.2;
+    const shade = 42 + Math.floor(shadeRandom * 68);
+    context.globalAlpha = 0.2 + alphaRandom * 0.5;
+    context.fillStyle = `rgb(${shade + 24}, ${shade + 15}, ${shade + 4})`;
+    context.beginPath();
+    context.ellipse(x, y, size * 1.6, size, Math.random() * Math.PI, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = RepeatWrapping;
+  texture.repeat.set(2.2, 2.2);
+  return texture;
+}
+
+function addCadEdges(mesh, color = 0x244131, threshold = 32) {
+  const edges = new LineSegments(
+    new EdgesGeometry(mesh.geometry, threshold),
+    new LineBasicMaterial({ color, transparent: true, opacity: 0.2 }),
+  );
+  mesh.add(edges);
+  return edges;
+}
+
+function disposeMaterial(material) {
+  Object.values(material).forEach((value) => {
+    if (value?.isTexture) value.dispose();
+  });
+  material.dispose();
+}
+
+const ThreeStage = ({
+  variant,
+  diameter,
+  height,
+  reservoir,
+  materialColor,
+  light,
+  humidity,
+  cadMode = 'assembly',
+  exploded = 0,
+  profileId = 'tapered',
+  wallThickness = 7,
+  rimWidth = 7,
+}) => {
   const mountRef = useRef(null);
 
   useEffect(() => {
@@ -212,133 +491,513 @@ const ThreeStage = ({ variant, diameter, height, reservoir, materialColor, light
     if (!context) return undefined;
 
     const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, context, preserveDrawingBuffer: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, variant === 'cad' ? 2 : 2.5));
     renderer.outputColorSpace = SRGBColorSpace;
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = variant === 'cad' ? 1.18 : 1.08;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
     const scene = new Scene();
-    const camera = new PerspectiveCamera(42, 1, 0.1, 100);
-    camera.position.set(0, 1.25, 7.2);
-    camera.lookAt(0, -0.05, 0);
+    const camera = new PerspectiveCamera(variant === 'cad' ? 35 : 42, 1, 0.1, 100);
+    camera.position.set(variant === 'cad' ? 3.8 : 0, variant === 'cad' ? 2.6 : 1.25, variant === 'cad' ? 6.1 : 7.2);
+    camera.lookAt(0, variant === 'cad' ? 0.15 : -0.05, 0);
 
-    scene.add(new HemisphereLight(0xf7ffe8, 0x244233, 2.6));
+    scene.add(new HemisphereLight(0xf7ffe8, 0x244233, variant === 'cad' ? 3.1 : 2.6));
 
-    const keyLight = new DirectionalLight(0xffffff, 2.2);
+    const keyLight = new DirectionalLight(0xffffff, variant === 'cad' ? 3.8 : 3.2);
     keyLight.position.set(4, 6, 5);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 16;
+    keyLight.shadow.camera.left = -5;
+    keyLight.shadow.camera.right = 5;
+    keyLight.shadow.camera.top = 5;
+    keyLight.shadow.camera.bottom = -5;
     scene.add(keyLight);
+
+    const fillLight = new DirectionalLight(0xa9f2ff, variant === 'cad' ? 1.15 : 0.2);
+    fillLight.position.set(-5, 2.4, -3.6);
+    scene.add(fillLight);
 
     const group = new Group();
     scene.add(group);
 
     if (variant === 'cad') {
-      const shellMaterial = new MeshStandardMaterial({
+      const machinedTexture = makeMachinedTexture(materialColor);
+      const profileShape = cadProfiles.find((profile) => profile.id === profileId) ?? cadProfiles[0];
+      const explode = clamp(exploded / 100, 0, 1);
+      const isFlowMode = cadMode === 'flow';
+      const isStressMode = cadMode === 'stress';
+      const isSectionMode = cadMode === 'section';
+      const testPulseMeshes = [];
+      const shellMaterial = new MeshPhysicalMaterial({
         color: new Color(materialColor),
-        roughness: 0.52,
-        metalness: 0.08,
+        clearcoat: 0.72,
+        clearcoatRoughness: 0.34,
+        metalness: 0.12,
+        opacity: isSectionMode ? 0.42 : 1,
+        roughness: isStressMode ? 0.28 : 0.34,
+        roughnessMap: machinedTexture,
+        transparent: isSectionMode,
       });
       const waterMaterial = new MeshPhysicalMaterial({
-        color: 0x63c5d5,
+        color: isFlowMode ? 0x4cecff : 0x63c5d5,
         transparent: true,
-        opacity: 0.72,
-        roughness: 0.08,
+        opacity: isFlowMode ? 0.78 : 0.62,
+        roughness: 0.02,
+        transmission: 0.44,
+      });
+      const glassMaterial = new MeshPhysicalMaterial({
+        color: 0xb7f1ef,
+        transparent: true,
+        opacity: 0.28,
+        roughness: 0.02,
+        transmission: 0.6,
+        side: DoubleSide,
+      });
+      const soilMaterial = new MeshStandardMaterial({ color: 0x44362b, roughness: 0.96 });
+      const metalMaterial = new MeshStandardMaterial({ color: 0xd7b866, roughness: 0.26, metalness: 0.48 });
+      const blackMaterial = new MeshStandardMaterial({ color: 0x17211c, roughness: 0.42, metalness: 0.18 });
+      const rubberMaterial = new MeshStandardMaterial({ color: 0x111713, roughness: 0.74 });
+      const flowMaterial = new MeshPhysicalMaterial({
+        color: 0x56f2ff,
+        emissive: 0x0f8fa1,
+        emissiveIntensity: 0.7,
+        opacity: 0.86,
+        roughness: 0.04,
+        transparent: true,
         transmission: 0.18,
       });
-      const soilMaterial = new MeshStandardMaterial({ color: 0x44362b, roughness: 0.92 });
-      const metalMaterial = new MeshStandardMaterial({ color: 0xe0c164, roughness: 0.38, metalness: 0.25 });
+      const stressMaterial = new MeshStandardMaterial({
+        color: 0xff9340,
+        emissive: 0xbd4515,
+        emissiveIntensity: 0.52,
+        opacity: 0.58,
+        roughness: 0.38,
+        transparent: true,
+      });
 
       const radius = clamp(diameter / 180, 0.78, 1.35);
       const bodyHeight = clamp(height / 210, 0.86, 1.55) * 2.6;
-      const shell = new Mesh(
-        new CylinderGeometry(radius * 0.72, radius, bodyHeight, 96, 1, true),
-        shellMaterial,
-      );
-      shell.position.y = 0.18;
-      group.add(shell);
+      const baseY = -bodyHeight / 2;
+      const topY = bodyHeight / 2;
+      const wall = clamp(radius * (wallThickness / 82), 0.045, 0.17);
+      const rimTube = clamp(rimWidth / 100, 0.045, 0.14);
+      const outerBottom = radius * profileShape.bottom;
+      const outerShoulder = radius * profileShape.shoulder;
+      const outerTop = radius * profileShape.top;
+      const cadDimensions = {
+        baseY,
+        outerBottom,
+        outerShoulder,
+        outerTop,
+        radius,
+        topY,
+        wall,
+      };
+      const profile = [
+        new Vector2(outerBottom, baseY + 0.1),
+        new Vector2(radius * (profileShape.bottom + 0.1), baseY - 0.04),
+        new Vector2(outerShoulder, topY - 0.48),
+        new Vector2(outerTop, topY - 0.08),
+        new Vector2(outerTop + rimTube, topY + 0.08),
+        new Vector2(outerTop + rimTube * 0.38, topY + 0.19),
+        new Vector2(outerTop - wall, topY + 0.09),
+        new Vector2(Math.max(outerBottom - wall * 0.62, radius * 0.46), baseY + 0.22),
+        new Vector2(outerBottom, baseY + 0.1),
+      ];
 
-      const rim = new Mesh(
-        new TorusGeometry(radius * 0.86, 0.075, 16, 96),
-        shellMaterial,
-      );
-      rim.position.y = bodyHeight / 2 + 0.2;
+      const addPart = (object, explodeVector = new Vector3()) => {
+        object.position.addScaledVector(explodeVector, explode);
+        group.add(object);
+        return object;
+      };
+
+      const shell = new Mesh(new LatheGeometry(profile, 160), shellMaterial);
+      shell.castShadow = true;
+      shell.receiveShadow = true;
+      addPart(shell, new Vector3(-1.05, 0.12, -0.16));
+      addCadEdges(shell);
+
+      const rim = new Mesh(new TorusGeometry(Math.max(outerTop, radius * 0.86), rimTube, 20, 160), shellMaterial);
+      rim.position.y = topY + 0.12;
       rim.rotation.x = Math.PI / 2;
-      group.add(rim);
+      rim.castShadow = true;
+      addPart(rim, new Vector3(0, 0.88, -0.12));
+      addCadEdges(rim, 0x183326);
+
+      const innerSleeve = new Mesh(
+        new CylinderGeometry(radius * 0.72, Math.max(outerShoulder - wall, radius * 0.74), bodyHeight * 0.68, 128, 1, true),
+        new MeshPhysicalMaterial({
+          color: 0xe8f7eb,
+          metalness: 0.02,
+          opacity: isSectionMode ? 0.52 : 0.34,
+          roughness: 0.18,
+          side: DoubleSide,
+          transparent: true,
+          transmission: 0.24,
+        }),
+      );
+      innerSleeve.position.y = baseY + bodyHeight * 0.5;
+      addPart(innerSleeve, new Vector3(0.72, 0.28, 0.04));
 
       const soil = new Mesh(
-        new CylinderGeometry(radius * 0.74, radius * 0.74, 0.09, 96),
+        new CylinderGeometry(radius * 0.73, radius * 0.79, 0.1, 128),
         soilMaterial,
       );
-      soil.position.y = bodyHeight / 2 + 0.16;
-      group.add(soil);
+      soil.position.y = topY + 0.05;
+      soil.receiveShadow = true;
+      addPart(soil, new Vector3(0.28, 0.74, 0.38));
 
+      for (let index = 0; index < 42; index += 1) {
+        const angle = index * 2.3999632297;
+        const spread = Math.sqrt((index + 0.5) / 42) * radius * 0.67;
+        const seed = Math.sin(index * 12.9898) * 43758.5453;
+        const pebble = new Mesh(
+          new SphereGeometry(0.025 + (seed - Math.floor(seed)) * 0.028, 12, 8),
+          new MeshStandardMaterial({
+            color: new Color(index % 3 === 0 ? 0x574431 : index % 3 === 1 ? 0x3d3027 : 0x675341),
+            roughness: 0.98,
+          }),
+        );
+        pebble.scale.set(1.35, 0.42, 0.88);
+        pebble.position.set(Math.cos(angle) * spread, topY + 0.11, Math.sin(angle) * spread);
+        pebble.rotation.set(seed * 0.01, angle, seed * 0.02);
+        addPart(pebble, new Vector3(0.28, 0.74, 0.38));
+      }
+
+      const reservoirHeight = clamp(reservoir, 0.45, 1.8) * 0.36;
       const reservoirMesh = new Mesh(
-        new CylinderGeometry(radius * 0.98, radius * 0.98, clamp(reservoir, 0.45, 1.8) * 0.36, 96),
+        new CylinderGeometry(radius * 0.72, radius * 0.86, reservoirHeight, 128),
         waterMaterial,
       );
-      reservoirMesh.position.y = -bodyHeight / 2 - 0.22;
-      group.add(reservoirMesh);
+      reservoirMesh.position.y = baseY + reservoirHeight / 2 + 0.14;
+      addPart(reservoirMesh, new Vector3(0.08, -0.54, 0.18));
+
+      const sightGlass = new Mesh(new BoxGeometry(radius * 0.54, bodyHeight * 0.36, 0.035), glassMaterial);
+      sightGlass.position.set(0, baseY + bodyHeight * 0.28, radius * 0.91);
+      addPart(sightGlass, new Vector3(0.92, -0.06, 0.68));
+      addCadEdges(sightGlass, 0x237b78, 12);
+
+      const baseGasket = new Mesh(new CylinderGeometry(radius * 0.92, radius * 0.98, 0.18, 128), rubberMaterial);
+      baseGasket.position.y = baseY - 0.08;
+      baseGasket.receiveShadow = true;
+      addPart(baseGasket, new Vector3(0, -0.78, -0.08));
 
       const electronicsBay = new Mesh(
-        new BoxGeometry(radius * 0.72, 0.42, 0.34),
-        new MeshStandardMaterial({ color: 0x1f2a24, roughness: 0.48 }),
+        new BoxGeometry(radius * 0.74, 0.5, 0.38),
+        blackMaterial,
       );
-      electronicsBay.position.set(0, -bodyHeight / 2 - 0.02, radius * 0.82);
-      group.add(electronicsBay);
+      electronicsBay.position.set(0, baseY + 0.18, radius * 0.93);
+      electronicsBay.castShadow = true;
+      addPart(electronicsBay, new Vector3(0.95, -0.22, 0.98));
+      addCadEdges(electronicsBay, 0x9bd7c8, 12);
 
-      const sensor = new Mesh(new BoxGeometry(0.05, bodyHeight * 0.82, 0.05), metalMaterial);
-      sensor.position.set(radius * 0.52, 0.18, radius * 0.22);
-      group.add(sensor);
+      for (let index = 0; index < 4; index += 1) {
+        const chip = new Mesh(
+          new BoxGeometry(radius * 0.12, 0.035, 0.08),
+          new MeshStandardMaterial({ color: index % 2 ? 0x315f57 : 0x202c2a, roughness: 0.34, metalness: 0.18 }),
+        );
+        chip.position.set((index - 1.5) * radius * 0.16, baseY + 0.42, radius * 1.13);
+        addPart(chip, new Vector3(0.95, -0.22, 0.98));
+      }
 
-      const tubeCurve = new CatmullRomCurve3([
-        new Vector3(-radius * 0.64, -bodyHeight / 2 - 0.28, radius * 0.18),
-        new Vector3(-radius * 0.76, -0.2, radius * 0.5),
-        new Vector3(-radius * 0.24, bodyHeight / 2 + 0.28, radius * 0.34),
-      ]);
+      if (!isFlowMode) {
+        const sensor = new Mesh(new BoxGeometry(0.045, bodyHeight * 0.78, 0.035), metalMaterial);
+        sensor.position.set(radius * 0.5, 0.14, radius * 0.18);
+        sensor.castShadow = true;
+        addPart(sensor);
+
+        const sensorRail = new Mesh(new BoxGeometry(0.035, bodyHeight * 0.9, 0.035), blackMaterial);
+        sensorRail.position.set(radius * 0.58, 0.1, radius * 0.2);
+        addPart(sensorRail);
+      }
+
+      const refillCap = new Mesh(new CylinderGeometry(radius * 0.105, radius * 0.105, 0.024, 48), blackMaterial);
+      refillCap.position.set(-radius * 0.46, topY + 0.18, radius * 0.28);
+      refillCap.castShadow = true;
+      addPart(refillCap, new Vector3(0, 0.88, -0.12));
+
+      const outletPort = buildInternalTubePath(cadDimensions).at(-1);
+      const nozzle = new Mesh(new CylinderGeometry(0.026, 0.038, 0.16, 24), metalMaterial);
+      nozzle.position.set(outletPort.x, topY + 0.02, outletPort.z);
+      nozzle.rotation.set(Math.PI / 2, 0, -0.38);
+      addPart(nozzle);
+
+      const tubePath = buildInternalTubePath(cadDimensions);
+      const tubeCurve = new CatmullRomCurve3(tubePath);
       const tube = new Mesh(
-        new TubeGeometry(tubeCurve, 48, 0.025, 8, false),
-        new MeshStandardMaterial({ color: 0x91d2ca, roughness: 0.32 }),
+        new TubeGeometry(tubeCurve, 72, 0.022, 12, false),
+        new MeshPhysicalMaterial({
+          color: 0x93e7dc,
+          opacity: isSectionMode || isFlowMode ? 0.72 : 0.34,
+          roughness: 0.08,
+          transparent: true,
+          transmission: 0.24,
+        }),
       );
-      group.add(tube);
+      tube.castShadow = true;
+      addPart(tube);
+
+      if (isFlowMode) {
+        for (let index = 0; index < 5; index += 1) {
+          const bead = new Mesh(new SphereGeometry(0.038, 18, 12), flowMaterial.clone());
+          const point = tubeCurve.getPointAt(index / 5);
+          bead.position.copy(point);
+          group.add(bead);
+          testPulseMeshes.push(bead);
+        }
+
+        const dosingPool = new Mesh(
+          new TorusGeometry(radius * 0.24, 0.01, 10, 64),
+          flowMaterial.clone(),
+        );
+        dosingPool.position.set(outletPort.x, topY + 0.02, outletPort.z);
+        dosingPool.rotation.x = Math.PI / 2;
+        addPart(dosingPool);
+        testPulseMeshes.push(dosingPool);
+      }
+
+      if (isStressMode) {
+        for (let index = 0; index < 3; index += 1) {
+          const band = new Mesh(
+            new TorusGeometry(radius * (0.74 + index * 0.11), 0.012, 8, 96),
+            stressMaterial.clone(),
+          );
+          band.position.y = baseY + bodyHeight * (0.22 + index * 0.24);
+          band.rotation.x = Math.PI / 2;
+          addPart(band, new Vector3(-1.05, 0.12, -0.16));
+          testPulseMeshes.push(band);
+        }
+      }
+
+      if (isSectionMode) {
+        const sectionRadius = Math.max(
+          getCadEnvelopeRadiusAtY(topY - 0.52, cadDimensions) - wall * 0.55,
+          radius * 0.42,
+        );
+        const sectionRing = new Mesh(
+          new RingGeometry(sectionRadius, sectionRadius + 0.006, 160),
+          new MeshStandardMaterial({ color: 0x243a31, roughness: 0.38, side: DoubleSide }),
+        );
+        sectionRing.position.y = topY - 0.52;
+        sectionRing.rotation.x = Math.PI / 2;
+        addPart(sectionRing);
+      }
+
+      const floor = new Mesh(
+        new PlaneGeometry(7, 7),
+        new MeshStandardMaterial({
+          color: 0xeaf0e7,
+          opacity: 0.54,
+          roughness: 0.82,
+          transparent: true,
+        }),
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = baseY - 0.2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const grid = new GridHelper(6.2, 28, 0x517263, 0xa8bbb0);
+      grid.material.opacity = 0.44;
+      grid.material.transparent = true;
+      grid.position.y = baseY - 0.195;
+      scene.add(grid);
+
+      group.position.set(0, 0.18, 0);
+      group.rotation.set(-0.08, -0.38, 0);
+      group.userData.testPulseMeshes = testPulseMeshes;
     } else {
+      const scenarioWarmth = clamp((light - 20) / 80, 0, 1);
+      const radius = clamp(diameter / 190, 0.72, 1.28);
+      const bodyHeight = clamp(height / 220, 0.78, 1.36) * 1.95;
+      const baseY = -bodyHeight / 2;
+      const topY = bodyHeight / 2;
+      const potColor = new Color(materialColor).lerp(new Color(0xe1f0dc), 0.18);
+      const potMaterial = new MeshPhysicalMaterial({
+        color: potColor,
+        clearcoat: 0.52,
+        clearcoatRoughness: 0.48,
+        metalness: 0.02,
+        roughness: 0.58,
+      });
+      const trayMaterial = new MeshPhysicalMaterial({
+        color: 0x16291e,
+        clearcoat: 0.22,
+        clearcoatRoughness: 0.6,
+        roughness: 0.72,
+      });
+      const soilMaterial = new MeshStandardMaterial({
+        color: 0x4b3d30,
+        map: makeSoilTexture(),
+        roughness: 0.98,
+      });
+      const waterBandMaterial = new MeshPhysicalMaterial({
+        color: 0x79d9df,
+        opacity: 0.48,
+        roughness: 0.06,
+        transparent: true,
+        transmission: 0.32,
+      });
+      const stemMaterial = new MeshStandardMaterial({ color: 0x6f9865, roughness: 0.82 });
+      const leafMaterial = new MeshPhysicalMaterial({
+        color: new Color(0x74a962).lerp(new Color(0xc7e987), scenarioWarmth * 0.2),
+        clearcoat: 0.18,
+        clearcoatRoughness: 0.74,
+        roughness: 0.62,
+      });
+
       const ground = new Mesh(
-        new CircleGeometry(3.2, 96),
-        new MeshStandardMaterial({ color: 0x28382f, roughness: 0.88 }),
+        new CircleGeometry(3.6, 160),
+        new MeshStandardMaterial({ color: 0xdde7d9, roughness: 0.92 }),
       );
       ground.rotation.x = -Math.PI / 2;
-      ground.position.y = -1.08;
+      ground.position.y = baseY - 0.18;
+      ground.receiveShadow = true;
       scene.add(ground);
 
+      const tray = new Mesh(new CylinderGeometry(radius * 1.2, radius * 1.32, 0.16, 160), trayMaterial);
+      tray.position.y = baseY - 0.08;
+      tray.castShadow = true;
+      tray.receiveShadow = true;
+      group.add(tray);
+
+      const potProfile = [
+        new Vector2(radius * 0.72, baseY + 0.12),
+        new Vector2(radius * 0.82, baseY),
+        new Vector2(radius * 0.94, topY - 0.34),
+        new Vector2(radius * 1.05, topY - 0.08),
+        new Vector2(radius * 1.12, topY + 0.04),
+        new Vector2(radius * 1.08, topY + 0.14),
+        new Vector2(radius * 0.92, topY + 0.07),
+        new Vector2(radius * 0.68, baseY + 0.2),
+        new Vector2(radius * 0.72, baseY + 0.12),
+      ];
       const pot = new Mesh(
-        new CylinderGeometry(0.78, 1.04, 1.75, 96, 1, true),
-        new MeshStandardMaterial({ color: 0x5f8d68, roughness: 0.62 }),
+        new LatheGeometry(potProfile, 192),
+        potMaterial,
       );
-      pot.position.y = 0.02;
+      pot.castShadow = true;
+      pot.receiveShadow = true;
       group.add(pot);
 
-      const water = new Mesh(
-        new CylinderGeometry(0.96, 0.96, clamp(reservoir, 0.45, 1.8) * 0.34, 96),
-        new MeshPhysicalMaterial({ color: 0x6ac7df, transparent: true, opacity: 0.58, roughness: 0.04 }),
+      const rimHighlight = new Mesh(
+        new TorusGeometry(radius * 1.05, 0.035, 16, 160),
+        new MeshPhysicalMaterial({ color: 0xe6f3df, clearcoat: 0.46, roughness: 0.42 }),
       );
-      water.position.y = -1.22;
+      rimHighlight.position.y = topY + 0.08;
+      rimHighlight.rotation.x = Math.PI / 2;
+      rimHighlight.castShadow = true;
+      group.add(rimHighlight);
+
+      const soil = new Mesh(new CylinderGeometry(radius * 0.8, radius * 0.84, 0.08, 160), soilMaterial);
+      soil.position.y = topY + 0.06;
+      soil.receiveShadow = true;
+      group.add(soil);
+
+      for (let index = 0; index < 95; index += 1) {
+        const angle = index * 2.3999632297;
+        const spread = Math.sqrt((index + 0.3) / 95) * radius * 0.72;
+        const seed = Math.sin(index * 28.41) * 10000;
+        const grain = new Mesh(
+          new SphereGeometry(0.011 + (seed - Math.floor(seed)) * 0.022, 10, 7),
+          new MeshStandardMaterial({
+            color: new Color(index % 4 === 0 ? 0x8b785e : index % 4 === 1 ? 0x5a4a3a : index % 4 === 2 ? 0xb8a080 : 0x73614c),
+            roughness: 0.96,
+          }),
+        );
+        grain.scale.set(1.8, 0.42, 1);
+        grain.position.set(Math.cos(angle) * spread, topY + 0.105, Math.sin(angle) * spread);
+        grain.rotation.set(seed * 0.01, angle, seed * 0.02);
+        grain.castShadow = true;
+        group.add(grain);
+      }
+
+      const water = new Mesh(
+        new CylinderGeometry(radius * 0.82, radius * 0.88, clamp(reservoir, 0.45, 1.8) * 0.19, 128),
+        waterBandMaterial,
+      );
+      water.position.y = baseY + 0.22;
       group.add(water);
 
-      const stemMaterial = new MeshStandardMaterial({ color: 0x7da56e, roughness: 0.8 });
-      for (let index = 0; index < 6; index += 1) {
-        const angle = index * 1.04;
-        const stem = new Mesh(new CapsuleGeometry(0.025, 0.78, 6, 12), stemMaterial);
-        stem.position.set(Math.cos(angle) * 0.16, 1.04, Math.sin(angle) * 0.16);
-        stem.rotation.z = Math.sin(angle) * 0.55;
-        stem.rotation.x = Math.cos(angle) * 0.45;
+      const sightGlass = new Mesh(
+        new BoxGeometry(radius * 0.32, bodyHeight * 0.3, 0.026),
+        new MeshPhysicalMaterial({
+          color: 0xbdece7,
+          opacity: 0.38,
+          roughness: 0.04,
+          transparent: true,
+          transmission: 0.42,
+        }),
+      );
+      sightGlass.position.set(-radius * 0.44, baseY + bodyHeight * 0.42, radius * 0.76);
+      group.add(sightGlass);
+
+      for (let index = 0; index < 14; index += 1) {
+        const angle = index * 0.448 + 0.2;
+        const tier = index % 3;
+        const stem = new Mesh(new CapsuleGeometry(0.018, 0.68 + scenarioWarmth * 0.16, 8, 16), stemMaterial);
+        stem.position.set(Math.cos(angle) * radius * 0.09, topY + 0.35 + tier * 0.02, Math.sin(angle) * radius * 0.09);
+        stem.rotation.z = Math.sin(angle) * 0.36;
+        stem.rotation.x = Math.cos(angle) * 0.34;
+        stem.castShadow = true;
         group.add(stem);
 
         const leaf = new Mesh(
-          new SphereGeometry(0.18 + light / 700, 24, 12),
-          new MeshStandardMaterial({ color: 0x9bcf71, roughness: 0.7 }),
+          new SphereGeometry(0.12 + light / 1050 + tier * 0.012, 40, 20),
+          leafMaterial,
         );
-        leaf.scale.set(1.7, 0.18, 0.78);
-        leaf.position.set(Math.cos(angle) * 0.54, 1.44 + humidity / 260, Math.sin(angle) * 0.54);
+        leaf.scale.set(1.9 - tier * 0.16, 0.11, 0.66 + tier * 0.08);
+        leaf.position.set(
+          Math.cos(angle) * radius * (0.28 + tier * 0.08),
+          topY + 0.58 + humidity / 520 + tier * 0.05 + Math.sin(index * 1.7) * 0.025,
+          Math.sin(angle) * radius * (0.28 + tier * 0.08),
+        );
+        leaf.rotation.x = 0.56 + Math.cos(angle) * 0.22;
         leaf.rotation.y = angle;
+        leaf.rotation.z = Math.sin(angle) * 0.34;
+        leaf.castShadow = true;
         group.add(leaf);
       }
+
+      group.position.y = 0.06;
+    }
+
+    const controls = variant === 'cad' ? new OrbitControls(camera, renderer.domElement) : null;
+    let userHasControlledCamera = false;
+
+    if (controls) {
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.38;
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.075;
+      controls.enablePan = true;
+      controls.screenSpacePanning = true;
+      controls.minDistance = 3.2;
+      controls.maxDistance = 9.2;
+      controls.minPolarAngle = 0.24;
+      controls.maxPolarAngle = Math.PI - 0.18;
+      controls.panSpeed = 0.74;
+      controls.rotateSpeed = 0.68;
+      controls.zoomSpeed = 0.82;
+      controls.target.set(0, 0.22, 0);
+      controls.update();
+
+      const handleControlStart = () => {
+        userHasControlledCamera = true;
+        controls.autoRotate = false;
+        mount.classList.add('is-grabbing');
+      };
+      const handleControlEnd = () => {
+        mount.classList.remove('is-grabbing');
+      };
+
+      controls.addEventListener('start', handleControlStart);
+      controls.addEventListener('end', handleControlEnd);
     }
 
     const resize = () => {
@@ -357,9 +1016,21 @@ const ThreeStage = ({ variant, diameter, height, reservoir, materialColor, light
 
     const renderFrame = () => {
       const elapsed = clock.getElapsedTime();
-      group.rotation.y = elapsed * (variant === 'cad' ? 0.32 : 0.18);
-      group.rotation.x = Math.sin(elapsed * 0.58) * 0.035;
-      group.position.y = variant === 'simulation' ? 0.2 + Math.sin(elapsed * 0.8) * 0.04 : 0.32;
+      if (variant === 'cad') {
+        if (!userHasControlledCamera) {
+          group.rotation.x = -0.08 + Math.sin(elapsed * 0.4) * 0.012;
+        }
+        group.userData.testPulseMeshes?.forEach((mesh, index) => {
+          const pulse = 0.5 + Math.sin(elapsed * 2.8 + index * 1.15) * 0.5;
+          mesh.scale.setScalar(0.78 + pulse * 0.38);
+          if (mesh.material) mesh.material.opacity = 0.36 + pulse * 0.5;
+        });
+        controls?.update();
+      } else {
+        group.rotation.y = elapsed * 0.18;
+        group.rotation.x = Math.sin(elapsed * 0.58) * 0.035;
+        group.position.y = 0.2 + Math.sin(elapsed * 0.8) * 0.04;
+      }
       renderer.render(scene, camera);
     };
 
@@ -415,12 +1086,13 @@ const ThreeStage = ({ variant, diameter, height, reservoir, materialColor, light
       resizeObserver?.disconnect();
       visibilityObserver?.disconnect();
       cancelAnimationFrame(frameId);
+      controls?.dispose();
       scene.traverse((object) => {
         object.geometry?.dispose();
         if (Array.isArray(object.material)) {
-          object.material.forEach((material) => material.dispose());
+          object.material.forEach(disposeMaterial);
         } else {
-          object.material?.dispose();
+          if (object.material) disposeMaterial(object.material);
         }
       });
       renderer.dispose();
@@ -428,9 +1100,54 @@ const ThreeStage = ({ variant, diameter, height, reservoir, materialColor, light
         mount.removeChild(renderer.domElement);
       }
     };
-  }, [diameter, height, humidity, light, materialColor, reservoir, variant]);
+  }, [
+    cadMode,
+    diameter,
+    exploded,
+    height,
+    humidity,
+    light,
+    materialColor,
+    profileId,
+    reservoir,
+    rimWidth,
+    variant,
+    wallThickness,
+  ]);
 
-  return <div ref={mountRef} className="three-stage" aria-hidden="true" />;
+  return (
+    <div
+      ref={mountRef}
+      className={`three-stage ${variant === 'cad' ? 'cad-stage' : 'simulation-stage'}`}
+      aria-label={variant === 'cad' ? 'Interactive 3D CAD smart pot model' : undefined}
+      aria-hidden={variant === 'cad' ? undefined : 'true'}
+      role={variant === 'cad' ? 'application' : undefined}
+      tabIndex={variant === 'cad' ? 0 : undefined}
+    >
+      {variant === 'cad' && (
+        <>
+          <div className="cad-hud" aria-hidden="true">
+            <div>
+              <span>DIA</span>
+              <strong>{diameter} mm</strong>
+            </div>
+            <div>
+              <span>H</span>
+              <strong>{height} mm</strong>
+            </div>
+            <div>
+              <span>RES</span>
+              <strong>{formatLiters(reservoir)}</strong>
+            </div>
+          </div>
+          <div className="cad-mode-hud" aria-hidden="true">
+            <span>{cadModes.find((mode) => mode.id === cadMode)?.label ?? 'Assembly'}</span>
+            <strong>{Math.round(exploded)}% split</strong>
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 const RangeControl = ({ label, min, max, step, value, onChange, valueLabel }) => (
@@ -445,6 +1162,19 @@ const RangeControl = ({ label, min, max, step, value, onChange, valueLabel }) =>
       onChange={(event) => onChange(Number(event.target.value))}
     />
     <span>{valueLabel ?? value}</span>
+  </label>
+);
+
+const SelectControl = ({ label, options, value, onChange }) => (
+  <label className="select-control">
+    {label}
+    <select value={value} onChange={(event) => onChange(event.target.value)}>
+      {options.map((option) => (
+        <option key={option.id} value={option.id}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   </label>
 );
 
@@ -471,11 +1201,23 @@ const SegmentedOptions = ({ options, selectedId, onSelect, className = '' }) => 
   </div>
 );
 
+const ControlGroup = ({ title, children }) => (
+  <section className="control-group" aria-label={title}>
+    <h3>{title}</h3>
+    {children}
+  </section>
+);
+
 const Studio = () => {
   const shellRef = usePanoramaMotion();
+  const [cadMode, setCadMode] = useState('assembly');
+  const [cadProfile, setCadProfile] = useState('tapered');
+  const [exploded, setExploded] = useState(0);
   const [diameter, setDiameter] = useState(180);
   const [height, setHeight] = useState(215);
+  const [wallThickness, setWallThickness] = useState(7);
   const [reservoir, setReservoir] = useState(0.9);
+  const [simulationId, setSimulationId] = useState('room');
   const [ambientTemp, setAmbientTemp] = useState(23);
   const [humidity, setHumidity] = useState(48);
   const [light, setLight] = useState(62);
@@ -484,11 +1226,26 @@ const Studio = () => {
 
   const selectedPlant = plantProfiles.find((plant) => plant.id === plantId) ?? plantProfiles[0];
   const selectedMaterial = materials.find((material) => material.id === materialId) ?? materials[0];
+  const selectedSimulation = simulationProfiles.find((profile) => profile.id === simulationId) ?? simulationProfiles[0];
+
+  const handleSimulationChange = (nextId) => {
+    const nextProfile = simulationProfiles.find((profile) => profile.id === nextId) ?? simulationProfiles[0];
+    setSimulationId(nextProfile.id);
+    setAmbientTemp(nextProfile.temperature);
+    setHumidity(nextProfile.humidity);
+    setLight(nextProfile.light);
+  };
 
   const model = useMemo(() => {
-    const radiusMm = diameter / 2;
-    const soilHeightMm = height * 0.58;
-    const soilVolumeL = Math.PI * radiusMm * radiusMm * soilHeightMm / 1000000;
+    const cadPhysics = buildCadPhysics({
+      diameter,
+      height,
+      reservoir,
+      wallThickness,
+      rimWidth: defaultRimWidth,
+      selectedMaterial,
+      profileId: cadProfile,
+    });
     const tempFactor = 1 + (ambientTemp - 22) * 0.045;
     const humidityFactor = 1 - (humidity - 50) * 0.007;
     const lightFactor = 0.72 + light / 110;
@@ -500,11 +1257,21 @@ const Studio = () => {
       autonomyDays,
       dailyUseMl,
       doseMl,
-      soilVolumeL,
-      printHours: clamp((diameter * height) / 5100, 5.5, 16.5),
+      ...cadPhysics,
       targetMoisture: selectedPlant.targetMoisture,
     };
-  }, [ambientTemp, diameter, height, humidity, light, reservoir, selectedPlant]);
+  }, [
+    ambientTemp,
+    cadProfile,
+    diameter,
+    height,
+    humidity,
+    light,
+    reservoir,
+    selectedMaterial,
+    selectedPlant,
+    wallThickness,
+  ]);
 
   return (
     <main ref={shellRef} className="studio-shell">
@@ -549,55 +1316,126 @@ const Studio = () => {
 
       <section id="cad" className="studio-page cad-page" aria-labelledby="cad-title" data-panorama-section="cad">
         <div className="section-copy">
-          <p className="studio-kicker">Page 02 / CAD 3D</p>
-          <h2 id="cad-title">Shape the pot as a printable, serviceable machine.</h2>
+          <p className="studio-kicker">Page 02 / CAD Workbench</p>
+          <h2 id="cad-title">A cleaner way to shape the smart pot.</h2>
           <p>
-            The geometry is treated as a parametric product system: shell, reservoir, sensor spine,
-            tubing path, electronics bay, refill path, and manufacturing constraints.
+            Tune the form, split the assembly, and run quick visual checks without losing the model.
           </p>
         </div>
 
-        <div className="immersive-grid">
-          <ThreeStage
-            variant="cad"
-            diameter={diameter}
-            height={height}
-            reservoir={reservoir}
-            materialColor={selectedMaterial.color}
-            light={light}
-            humidity={humidity}
-          />
-          <div className="control-surface">
-            <RangeControl
-              label="Diameter"
-              min="130"
-              max="240"
-              value={diameter}
-              onChange={setDiameter}
-              valueLabel={`${diameter} mm`}
+        <div className="cad-workbench">
+          <div className="cad-viewer-panel">
+            <ThreeStage
+              variant="cad"
+              diameter={diameter}
+              height={height}
+              reservoir={reservoir}
+              materialColor={selectedMaterial.color}
+              light={light}
+              humidity={humidity}
+              cadMode={cadMode}
+              exploded={exploded}
+              profileId={cadProfile}
+              wallThickness={wallThickness}
+              rimWidth={defaultRimWidth}
             />
-            <RangeControl
-              label="Body height"
-              min="160"
-              max="300"
-              value={height}
-              onChange={setHeight}
-              valueLabel={`${height} mm`}
-            />
-            <RangeControl
-              label="Reservoir"
-              min="0.4"
-              max="1.8"
-              step="0.1"
-              value={reservoir}
-              onChange={setReservoir}
-              valueLabel={formatLiters(reservoir)}
-            />
-            <div className="metric-grid">
-              <MetricCard label="Soil volume" value={formatLiters(model.soilVolumeL)} />
-              <MetricCard label="Print estimate" value={`${model.printHours.toFixed(1)} h`} />
+            <div className="cad-status-strip" aria-label="CAD model summary">
+              <MetricCard label="Volume" value={formatLiters(model.soilVolumeL)} />
+              <MetricCard label="Mass" value={formatKg(model.totalMassKg)} />
+              <MetricCard label="Safety" value={`${model.safetyFactor.toFixed(0)}x`} />
+              <MetricCard label="Pressure" value={formatKpa(model.hydrostaticPressureKpa)} />
             </div>
           </div>
+
+          <aside className="control-surface cad-control-surface" aria-label="CAD controls">
+            <div className="cad-inspector-title">
+              <span>{cadModes.find((mode) => mode.id === cadMode)?.label ?? 'Assembly'}</span>
+              <strong>{cadProfiles.find((profile) => profile.id === cadProfile)?.label ?? 'Tapered'}</strong>
+            </div>
+
+            <ControlGroup title="View">
+              <SelectControl
+                label="Mode"
+                options={cadModes}
+                value={cadMode}
+                onChange={setCadMode}
+              />
+              <div className="control-stack">
+                <RangeControl
+                  label="Exploded view"
+                  min="0"
+                  max="100"
+                  value={exploded}
+                  onChange={setExploded}
+                  valueLabel={`${exploded}%`}
+                />
+              </div>
+            </ControlGroup>
+
+            <ControlGroup title="Form">
+              <SelectControl
+                label="Profile"
+                options={cadProfiles}
+                value={cadProfile}
+                onChange={setCadProfile}
+              />
+              <div className="control-stack">
+                <RangeControl
+                  label="Diameter"
+                  min="130"
+                  max="240"
+                  value={diameter}
+                  onChange={setDiameter}
+                  valueLabel={`${diameter} mm`}
+                />
+                <RangeControl
+                  label="Body height"
+                  min="160"
+                  max="300"
+                  value={height}
+                  onChange={setHeight}
+                  valueLabel={`${height} mm`}
+                />
+                <RangeControl
+                  label="Reservoir"
+                  min="0.4"
+                  max="1.8"
+                  step="0.1"
+                  value={reservoir}
+                  onChange={setReservoir}
+                  valueLabel={formatLiters(reservoir)}
+                />
+              </div>
+            </ControlGroup>
+
+            <ControlGroup title="Build">
+              <SelectControl
+                label="Material"
+                options={materials}
+                value={materialId}
+                onChange={setMaterialId}
+              />
+              <div className="control-stack">
+                <RangeControl
+                  label="Wall"
+                  min="4"
+                  max="14"
+                  value={wallThickness}
+                  onChange={setWallThickness}
+                  valueLabel={`${wallThickness} mm`}
+                />
+              </div>
+            </ControlGroup>
+
+            <ControlGroup title="Physics">
+              <div className="physics-readout" aria-label="CAD physics readout">
+                <MetricCard label="Hoop stress" value={`${model.hoopStressMpa.toFixed(2)} MPa`} />
+                <MetricCard label="Tip angle" value={`${model.stabilityAngleDeg.toFixed(0)} deg`} />
+                <MetricCard label="Material" value={`${model.dryMassKg.toFixed(2)} kg`} />
+                <MetricCard label="Print volume" value={`${model.printableVolumeCm3.toFixed(0)} cm3`} />
+              </div>
+            </ControlGroup>
+          </aside>
         </div>
       </section>
 
@@ -639,56 +1477,44 @@ const Studio = () => {
 
       <section id="simulation" className="studio-page simulation-page" aria-labelledby="simulation-title" data-panorama-section="simulation">
         <div className="section-copy">
-          <p className="studio-kicker">Page 04 / Simulated World</p>
-          <h2 id="simulation-title">Test the plant pot against changing real-world conditions.</h2>
+          <p className="studio-kicker">Page 04 / Validation</p>
+          <h2 id="simulation-title">Run one clean environment check.</h2>
           <p>
-            The virtual world models water demand, light, air, dosing, and fault detection before a
-            print is committed to plastic and electronics.
+            Pick a real-world condition and read the watering outcome.
           </p>
         </div>
 
-        <div className="immersive-grid simulation-grid">
-          <ThreeStage
-            variant="simulation"
-            diameter={diameter}
-            height={height}
-            reservoir={reservoir}
-            materialColor={selectedMaterial.color}
-            light={light}
-            humidity={humidity}
-          />
-          <div className="control-surface">
-            <RangeControl
-              label="Temperature"
-              min="15"
-              max="33"
-              value={ambientTemp}
-              onChange={setAmbientTemp}
-              valueLabel={`${ambientTemp} C`}
+        <div className="simulation-workbench">
+          <div className="simulation-stage-panel">
+            <ThreeStage
+              variant="simulation"
+              diameter={diameter}
+              height={height}
+              reservoir={reservoir}
+              materialColor={selectedMaterial.color}
+              light={light}
+              humidity={humidity}
             />
-            <RangeControl
-              label="Humidity"
-              min="25"
-              max="80"
-              value={humidity}
-              onChange={setHumidity}
-              valueLabel={`${humidity}% RH`}
-            />
-            <RangeControl
-              label="Light"
-              min="20"
-              max="100"
-              value={light}
-              onChange={setLight}
-              valueLabel={`${light}%`}
-            />
-            <div className="metric-grid">
+            <div className="simulation-result-strip" aria-label="Simulation result">
               <MetricCard label="Daily water" value={`${model.dailyUseMl.toFixed(0)} ml`} />
-              <MetricCard label="Micro-dose" value={`${model.doseMl.toFixed(0)} ml`} />
-              <MetricCard label="Target moisture" value={`${model.targetMoisture}%`} />
               <MetricCard label="Autonomy" value={`${model.autonomyDays.toFixed(1)} days`} />
+              <MetricCard label="Dose" value={`${model.doseMl.toFixed(0)} ml`} />
             </div>
           </div>
+
+          <aside className="simulation-minimal-panel" aria-label="Simulation controls">
+            <SelectControl
+              label="Scenario"
+              options={simulationProfiles}
+              value={simulationId}
+              onChange={handleSimulationChange}
+            />
+            <div className="simulation-condition-strip" aria-label="Scenario conditions">
+              <MetricCard label="Air" value={`${selectedSimulation.temperature} C`} />
+              <MetricCard label="RH" value={`${selectedSimulation.humidity}%`} />
+              <MetricCard label="Light" value={`${selectedSimulation.light}%`} />
+            </div>
+          </aside>
         </div>
       </section>
 

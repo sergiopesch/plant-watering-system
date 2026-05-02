@@ -51,6 +51,43 @@ function analyzePng(buffer) {
   };
 }
 
+function comparePng(beforeBuffer, afterBuffer) {
+  const before = PNG.sync.read(beforeBuffer);
+  const after = PNG.sync.read(afterBuffer);
+  const width = Math.min(before.width, after.width);
+  const height = Math.min(before.height, after.height);
+  let changed = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const beforeIndex = (y * before.width + x) * 4;
+      const afterIndex = (y * after.width + x) * 4;
+      const delta = Math.abs(before.data[beforeIndex] - after.data[afterIndex])
+        + Math.abs(before.data[beforeIndex + 1] - after.data[afterIndex + 1])
+        + Math.abs(before.data[beforeIndex + 2] - after.data[afterIndex + 2]);
+
+      if (delta > 42) changed += 1;
+    }
+  }
+
+  const total = width * height;
+  return {
+    changedRatio: changed / total,
+    height,
+    visuallyChanged: changed > total * 0.015,
+    width,
+  };
+}
+
+async function setRangeByLabel(page, label, value) {
+  await page.getByLabel(label).evaluate((input, nextValue) => {
+    const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    valueSetter.call(input, String(nextValue));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, value);
+}
+
 async function inspectViewport(browser, viewport) {
   const page = await browser.newPage({
     deviceScaleFactor: 1,
@@ -79,10 +116,31 @@ async function inspectViewport(browser, viewport) {
     stageScreenshots.push(analyzePng(await locator.screenshot()));
   }
 
+  await page.locator('#cad').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(350);
+  const cadStage = page.locator('.cad-stage');
+  const cadBefore = await cadStage.screenshot();
+  const cadSelects = page.locator('.cad-control-surface select');
+  await cadSelects.nth(0).selectOption('flow');
+  await cadSelects.nth(1).selectOption('bell');
+  await setRangeByLabel(page, 'Exploded view', 86);
+  await page.waitForTimeout(850);
+  const cadAfter = await cadStage.screenshot();
+  const cadInteraction = {
+    diff: comparePng(cadBefore, cadAfter),
+    hud: (await page.locator('.cad-mode-hud').textContent()).replace(/\s+/g, ' ').trim(),
+    mode: await cadSelects.nth(0).inputValue(),
+    profile: await cadSelects.nth(1).inputValue(),
+    ranges: {
+      exploded: await page.getByLabel('Exploded view').inputValue(),
+    },
+  };
+
   await page.close();
 
   return {
     ...layout,
+    cadInteraction,
     stageScreenshots,
     viewport: viewport.name,
   };
@@ -97,6 +155,12 @@ function assertReport(report) {
   if (report.clippedSections.length > 0) failures.push(`clipped sections: ${report.clippedSections.join(', ')}`);
   if (report.textOverflow.length > 0) failures.push(`text overflow: ${report.textOverflow.join(' | ')}`);
   if (report.stageScreenshots.length !== 2) failures.push(`expected 2 Three.js stages, found ${report.stageScreenshots.length}`);
+  if (!report.cadInteraction.diff.visuallyChanged) failures.push(`CAD interaction did not visibly change the model: ${report.cadInteraction.diff.changedRatio}`);
+  if (!report.cadInteraction.hud.toLowerCase().includes('flow test')) failures.push(`CAD mode HUD did not update: ${report.cadInteraction.hud}`);
+  if (!report.cadInteraction.hud.includes('86%')) failures.push(`CAD exploded HUD did not update: ${report.cadInteraction.hud}`);
+  if (report.cadInteraction.mode !== 'flow') failures.push(`Flow test mode did not stay selected: ${report.cadInteraction.mode}`);
+  if (report.cadInteraction.profile !== 'bell') failures.push(`Bell profile did not stay selected: ${report.cadInteraction.profile}`);
+  if (report.cadInteraction.ranges.exploded !== '86') failures.push(`exploded range did not update: ${report.cadInteraction.ranges.exploded}`);
 
   report.stageScreenshots.forEach((stage, index) => {
     if (!stage.nonBlank) failures.push(`stage ${index + 1} appears blank`);
