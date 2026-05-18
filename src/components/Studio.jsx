@@ -230,6 +230,7 @@ function buildCadPhysics({
 
   return {
     dryMassKg,
+    designPressureKpa: designPressurePa / 1000,
     hydrostaticPressureKpa: hydrostaticPressurePa / 1000,
     hoopStressMpa,
     printableVolumeCm3,
@@ -284,6 +285,22 @@ function setCachedStyleVar(node, cache, name, value) {
   if (cache[name] === value) return;
   node.style.setProperty(name, value);
   cache[name] = value;
+}
+
+function useDebouncedValue(value, delayMs) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [delayMs, value]);
+
+  return debouncedValue;
 }
 
 function usePanoramaMotion() {
@@ -474,6 +491,47 @@ const ThreeStage = ({
   rimWidth = 7,
 }) => {
   const mountRef = useRef(null);
+  const renderConfig = useDebouncedValue(useMemo(() => ({
+    cadMode,
+    diameter,
+    exploded,
+    height,
+    humidity,
+    light,
+    materialColor,
+    profileId,
+    reservoir,
+    rimWidth,
+    variant,
+    wallThickness,
+  }), [
+    cadMode,
+    diameter,
+    exploded,
+    height,
+    humidity,
+    light,
+    materialColor,
+    profileId,
+    reservoir,
+    rimWidth,
+    variant,
+    wallThickness,
+  ]), 120);
+  const {
+    cadMode: renderCadMode,
+    diameter: renderDiameter,
+    exploded: renderExploded,
+    height: renderHeight,
+    humidity: renderHumidity,
+    light: renderLight,
+    materialColor: renderMaterialColor,
+    profileId: renderProfileId,
+    reservoir: renderReservoir,
+    rimWidth: renderRimWidth,
+    variant: renderVariant,
+    wallThickness: renderWallThickness,
+  } = renderConfig;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -491,22 +549,22 @@ const ThreeStage = ({
     if (!context) return undefined;
 
     const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, context, preserveDrawingBuffer: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, variant === 'cad' ? 2 : 2.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, renderVariant === 'cad' ? 2 : 2.5));
     renderer.outputColorSpace = SRGBColorSpace;
     renderer.toneMapping = ACESFilmicToneMapping;
-    renderer.toneMappingExposure = variant === 'cad' ? 1.18 : 1.08;
+    renderer.toneMappingExposure = renderVariant === 'cad' ? 1.18 : 1.08;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
     const scene = new Scene();
-    const camera = new PerspectiveCamera(variant === 'cad' ? 35 : 42, 1, 0.1, 100);
-    camera.position.set(variant === 'cad' ? 3.8 : 0, variant === 'cad' ? 2.6 : 1.25, variant === 'cad' ? 6.1 : 7.2);
-    camera.lookAt(0, variant === 'cad' ? 0.15 : -0.05, 0);
+    const camera = new PerspectiveCamera(renderVariant === 'cad' ? 35 : 42, 1, 0.1, 100);
+    camera.position.set(renderVariant === 'cad' ? 3.8 : 0, renderVariant === 'cad' ? 2.6 : 1.25, renderVariant === 'cad' ? 6.1 : 7.2);
+    camera.lookAt(0, renderVariant === 'cad' ? 0.15 : -0.05, 0);
 
-    scene.add(new HemisphereLight(0xf7ffe8, 0x244233, variant === 'cad' ? 3.1 : 2.6));
+    scene.add(new HemisphereLight(0xf7ffe8, 0x244233, renderVariant === 'cad' ? 3.1 : 2.6));
 
-    const keyLight = new DirectionalLight(0xffffff, variant === 'cad' ? 3.8 : 3.2);
+    const keyLight = new DirectionalLight(0xffffff, renderVariant === 'cad' ? 3.8 : 3.2);
     keyLight.position.set(4, 6, 5);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.set(2048, 2048);
@@ -518,23 +576,23 @@ const ThreeStage = ({
     keyLight.shadow.camera.bottom = -5;
     scene.add(keyLight);
 
-    const fillLight = new DirectionalLight(0xa9f2ff, variant === 'cad' ? 1.15 : 0.2);
+    const fillLight = new DirectionalLight(0xa9f2ff, renderVariant === 'cad' ? 1.15 : 0.2);
     fillLight.position.set(-5, 2.4, -3.6);
     scene.add(fillLight);
 
     const group = new Group();
     scene.add(group);
 
-    if (variant === 'cad') {
-      const machinedTexture = makeMachinedTexture(materialColor);
-      const profileShape = cadProfiles.find((profile) => profile.id === profileId) ?? cadProfiles[0];
-      const explode = clamp(exploded / 100, 0, 1);
-      const isFlowMode = cadMode === 'flow';
-      const isStressMode = cadMode === 'stress';
-      const isSectionMode = cadMode === 'section';
+    if (renderVariant === 'cad') {
+      const machinedTexture = makeMachinedTexture(renderMaterialColor);
+      const profileShape = cadProfiles.find((profile) => profile.id === renderProfileId) ?? cadProfiles[0];
+      const explode = clamp(renderExploded / 100, 0, 1);
+      const isFlowMode = renderCadMode === 'flow';
+      const isStressMode = renderCadMode === 'stress';
+      const isSectionMode = renderCadMode === 'section';
       const testPulseMeshes = [];
       const shellMaterial = new MeshPhysicalMaterial({
-        color: new Color(materialColor),
+        color: new Color(renderMaterialColor),
         clearcoat: 0.72,
         clearcoatRoughness: 0.34,
         metalness: 0.12,
@@ -580,12 +638,12 @@ const ThreeStage = ({
         transparent: true,
       });
 
-      const radius = clamp(diameter / 180, 0.78, 1.35);
-      const bodyHeight = clamp(height / 210, 0.86, 1.55) * 2.6;
+      const radius = clamp(renderDiameter / 180, 0.78, 1.35);
+      const bodyHeight = clamp(renderHeight / 210, 0.86, 1.55) * 2.6;
       const baseY = -bodyHeight / 2;
       const topY = bodyHeight / 2;
-      const wall = clamp(radius * (wallThickness / 82), 0.045, 0.17);
-      const rimTube = clamp(rimWidth / 100, 0.045, 0.14);
+      const wall = clamp(radius * (renderWallThickness / 82), 0.045, 0.17);
+      const rimTube = clamp(renderRimWidth / 100, 0.045, 0.14);
       const outerBottom = radius * profileShape.bottom;
       const outerShoulder = radius * profileShape.shoulder;
       const outerTop = radius * profileShape.top;
@@ -669,7 +727,7 @@ const ThreeStage = ({
         addPart(pebble, new Vector3(0.28, 0.74, 0.38));
       }
 
-      const reservoirHeight = clamp(reservoir, 0.45, 1.8) * 0.36;
+      const reservoirHeight = clamp(renderReservoir, 0.45, 1.8) * 0.36;
       const reservoirMesh = new Mesh(
         new CylinderGeometry(radius * 0.72, radius * 0.86, reservoirHeight, 128),
         waterMaterial,
@@ -812,12 +870,12 @@ const ThreeStage = ({
       group.rotation.set(-0.08, -0.38, 0);
       group.userData.testPulseMeshes = testPulseMeshes;
     } else {
-      const scenarioWarmth = clamp((light - 20) / 80, 0, 1);
-      const radius = clamp(diameter / 190, 0.72, 1.28);
-      const bodyHeight = clamp(height / 220, 0.78, 1.36) * 1.95;
+      const scenarioWarmth = clamp((renderLight - 20) / 80, 0, 1);
+      const radius = clamp(renderDiameter / 190, 0.72, 1.28);
+      const bodyHeight = clamp(renderHeight / 220, 0.78, 1.36) * 1.95;
       const baseY = -bodyHeight / 2;
       const topY = bodyHeight / 2;
-      const potColor = new Color(materialColor).lerp(new Color(0xe1f0dc), 0.18);
+      const potColor = new Color(renderMaterialColor).lerp(new Color(0xe1f0dc), 0.18);
       const potMaterial = new MeshPhysicalMaterial({
         color: potColor,
         clearcoat: 0.52,
@@ -918,7 +976,7 @@ const ThreeStage = ({
       }
 
       const water = new Mesh(
-        new CylinderGeometry(radius * 0.82, radius * 0.88, clamp(reservoir, 0.45, 1.8) * 0.19, 128),
+        new CylinderGeometry(radius * 0.82, radius * 0.88, clamp(renderReservoir, 0.45, 1.8) * 0.19, 128),
         waterBandMaterial,
       );
       water.position.y = baseY + 0.22;
@@ -948,13 +1006,13 @@ const ThreeStage = ({
         group.add(stem);
 
         const leaf = new Mesh(
-          new SphereGeometry(0.12 + light / 1050 + tier * 0.012, 40, 20),
+          new SphereGeometry(0.12 + renderLight / 1050 + tier * 0.012, 40, 20),
           leafMaterial,
         );
         leaf.scale.set(1.9 - tier * 0.16, 0.11, 0.66 + tier * 0.08);
         leaf.position.set(
           Math.cos(angle) * radius * (0.28 + tier * 0.08),
-          topY + 0.58 + humidity / 520 + tier * 0.05 + Math.sin(index * 1.7) * 0.025,
+          topY + 0.58 + renderHumidity / 520 + tier * 0.05 + Math.sin(index * 1.7) * 0.025,
           Math.sin(angle) * radius * (0.28 + tier * 0.08),
         );
         leaf.rotation.x = 0.56 + Math.cos(angle) * 0.22;
@@ -967,7 +1025,7 @@ const ThreeStage = ({
       group.position.y = 0.06;
     }
 
-    const controls = variant === 'cad' ? new OrbitControls(camera, renderer.domElement) : null;
+    const controls = renderVariant === 'cad' ? new OrbitControls(camera, renderer.domElement) : null;
     let userHasControlledCamera = false;
 
     if (controls) {
@@ -1016,7 +1074,7 @@ const ThreeStage = ({
 
     const renderFrame = () => {
       const elapsed = clock.getElapsedTime();
-      if (variant === 'cad') {
+      if (renderVariant === 'cad') {
         if (!userHasControlledCamera) {
           group.rotation.x = -0.08 + Math.sin(elapsed * 0.4) * 0.012;
         }
@@ -1101,18 +1159,18 @@ const ThreeStage = ({
       }
     };
   }, [
-    cadMode,
-    diameter,
-    exploded,
-    height,
-    humidity,
-    light,
-    materialColor,
-    profileId,
-    reservoir,
-    rimWidth,
-    variant,
-    wallThickness,
+    renderCadMode,
+    renderDiameter,
+    renderExploded,
+    renderHeight,
+    renderHumidity,
+    renderLight,
+    renderMaterialColor,
+    renderProfileId,
+    renderReservoir,
+    renderRimWidth,
+    renderVariant,
+    renderWallThickness,
   ]);
 
   return (
@@ -1343,7 +1401,7 @@ const Studio = () => {
               <MetricCard label="Volume" value={formatLiters(model.soilVolumeL)} />
               <MetricCard label="Mass" value={formatKg(model.totalMassKg)} />
               <MetricCard label="Safety" value={`${model.safetyFactor.toFixed(0)}x`} />
-              <MetricCard label="Pressure" value={formatKpa(model.hydrostaticPressureKpa)} />
+              <MetricCard label="Design pressure" value={formatKpa(model.designPressureKpa)} />
             </div>
           </div>
 
