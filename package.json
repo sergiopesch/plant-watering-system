@@ -38,9 +38,6 @@
     "follow-redirects": "1.16.0",
     "picomatch": "4.0.4",
     "yaml": "2.8.3",
-    "rolldown": "1.0.1",
-    "tinyglobby": "0.2.16",
-    "postcss": "8.5.14",
     "undici": "7.28.0"
   }
 }
